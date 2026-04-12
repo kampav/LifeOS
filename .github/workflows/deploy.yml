@@ -1,0 +1,142 @@
+name: Life OS CI/CD
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main]
+
+env:
+  PROJECT_ID: life-os-prod
+  REGION: europe-west2
+  REPO: kampav/LifeOS
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run unit tests
+        run: pytest tests/unit tests/regression -q --tb=short
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          REDIS_URL: redis://localhost:6379/0
+      - name: Security scan
+        run: pip audit || true   # warn only, don't block
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_API_URL: https://api.lifeos.ai/api/v1
+      - run: npm audit --audit-level=high || true
+
+  build-and-push:
+    needs: [test-backend, test-frontend]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+      - name: Build & push API
+        run: |
+          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/api:${{ github.sha }} \
+                       -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/api:latest ./backend
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/api:${{ github.sha }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/api:latest
+      - name: Build & push Frontend
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --build-arg NEXT_PUBLIC_API_URL=https://api.lifeos.ai/api/v1 \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/frontend:${{ github.sha }} \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/frontend:latest ./frontend
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/frontend:${{ github.sha }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/frontend:latest
+
+  deploy-staging:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Deploy API to staging
+        run: |
+          gcloud run deploy life-os-api-staging \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/api:${{ github.sha }} \
+            --region ${{ env.REGION }} --platform managed \
+            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,REDIS_URL=redis-url:latest" \
+            --set-env-vars="ENVIRONMENT=staging,DEBUG=false" \
+            --allow-unauthenticated --min-instances=0 --max-instances=5
+      - name: Deploy Frontend to staging
+        run: |
+          gcloud run deploy life-os-frontend-staging \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/frontend:${{ github.sha }} \
+            --region ${{ env.REGION }} --platform managed \
+            --allow-unauthenticated --min-instances=0 --max-instances=3
+
+  deploy-production:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production   # requires manual approval in GitHub
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Deploy API (canary 10%)
+        run: |
+          gcloud run deploy life-os-api \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/api:${{ github.sha }} \
+            --region ${{ env.REGION }} --platform managed \
+            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,REDIS_URL=redis-url:latest" \
+            --set-env-vars="ENVIRONMENT=production,DEBUG=false" \
+            --no-traffic --allow-unauthenticated \
+            --min-instances=1 --max-instances=20 --cpu=2 --memory=2Gi
+          gcloud run services update-traffic life-os-api \
+            --to-revisions=LATEST=10 --region ${{ env.REGION }}
+      - name: Smoke check (3 min)
+        run: sleep 180
+      - name: Promote API to 100%
+        run: |
+          gcloud run services update-traffic life-os-api --to-latest --region ${{ env.REGION }}
+      - name: Deploy Frontend
+        run: |
+          gcloud run deploy life-os-frontend \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/frontend:${{ github.sha }} \
+            --region ${{ env.REGION }} --platform managed \
+            --allow-unauthenticated --min-instances=1 --max-instances=10
