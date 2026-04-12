@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { usersApi, domainsApi, aiApi } from "@/lib/api";
@@ -60,17 +60,21 @@ export default function DashboardPage() {
   });
 
   const firstName = String(profile?.full_name || profile?.name || "").split(" ")[0] || "there";
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const lifeScore = typeof scoreData?.score === "number" ? scoreData.score : 0;
+
+  const [greeting, setGreeting] = useState("Welcome");
+  useEffect(() => {
+    const h = new Date().getHours();
+    setGreeting(h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
+  }, []);
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-6 py-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{greeting}, {firstName} 👋</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+          <h1 suppressHydrationWarning className="text-2xl font-bold text-gray-900">{greeting}, {firstName} 👋</h1>
+          <p suppressHydrationWarning className="text-gray-500 text-sm mt-0.5">
             {new Date().toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" })}
           </p>
         </div>
