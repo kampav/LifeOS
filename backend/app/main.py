@@ -75,6 +75,39 @@ app.include_router(notifications.router, prefix="/api/v1")
 app.include_router(ai_coach.router, prefix="/api/v1")
 
 
+# ── Convenience aliases ──────────────────────────────────────────────────────
+from fastapi import Depends as _Depends
+from app.security.auth import get_current_user as _get_user, User as _User
+from app.services.score_service import compute_life_score as _life_score, compute_domain_score as _domain_score
+
+DOMAIN_LIST = ["health", "family", "education", "social", "finance", "career", "growth", "property", "holiday", "community"]
+
+
+@app.get("/api/v1/profile", tags=["profile"])
+async def get_profile_alias(user: _User = _Depends(_get_user)):
+    from app.db.client import get_supabase
+    sb = get_supabase()
+    r = sb.table("profiles").select("*").eq("id", user.id).single().execute()
+    return r.data or {}
+
+
+@app.put("/api/v1/profile", tags=["profile"])
+async def update_profile_alias(payload: dict, user: _User = _Depends(_get_user)):
+    from app.db.client import get_supabase
+    sb = get_supabase()
+    r = sb.table("profiles").update(payload).eq("id", user.id).execute()
+    return r.data[0] if r.data else {}
+
+
+@app.get("/api/v1/scores/all", tags=["scores"])
+async def get_all_scores(user: _User = _Depends(_get_user)):
+    import asyncio
+    scores = await asyncio.gather(*[_domain_score(user.id, d) for d in DOMAIN_LIST])
+    domain_scores = dict(zip(DOMAIN_LIST, scores))
+    life_score = await _life_score(user.id)
+    return {"life_score": life_score, "domain_scores": domain_scores}
+
+
 # ── Health + Metrics ─────────────────────────────────────────────────────────
 @app.get("/health", tags=["system"])
 async def health():

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { DOMAINS } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, MessageCircle, Target, Activity, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageCircle, Target, Activity, Settings, LogOut, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -12,6 +12,7 @@ const NAV = [
   { href: "/coach", icon: MessageCircle, label: "AI Coach" },
   { href: "/goals", icon: Target, label: "Goals" },
   { href: "/habits", icon: Activity, label: "Habits" },
+  { href: "/review", icon: Sparkles, label: "Reviews" },
 ];
 
 export function Sidebar() {
