@@ -81,10 +81,10 @@ export function NotificationBell() {
                         <span className="text-lg flex-shrink-0 mt-0.5">{TYPE_ICONS[n.type as string] || "🔔"}</span>
                         <div className="min-w-0">
                           <p className={`text-sm ${!n.read ? "font-semibold text-gray-900" : "text-gray-700"} line-clamp-1`}>{n.title as string}</p>
-                          {n.body && <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.body as string}</p>}
+                          {n.body ? <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.body as string}</p> : null}
                           <p className="text-xs text-gray-400 mt-1">{format(parseISO(n.created_at as string), "MMM d, h:mm a")}</p>
                         </div>
-                        {!n.read && <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />}
+                        {!n.read ? <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" /> : null}
                       </div>
                     </div>
                   ))

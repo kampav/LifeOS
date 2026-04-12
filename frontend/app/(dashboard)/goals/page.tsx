@@ -127,7 +127,7 @@ export default function GoalsPage() {
                 </div>
                 {goal.target_date ? <span className="text-xs text-gray-400">{new Date(goal.target_date as string).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span> : null}
               </div>
-              {goal.target_value && (
+              {goal.target_value ? (
                 <div>
                   <div className="flex justify-between text-xs text-gray-500 mb-1.5">
                     <span>{goal.current_value as number} / {goal.target_value as number} {goal.unit as string}</span>
@@ -137,8 +137,8 @@ export default function GoalsPage() {
                     <div className="h-full rounded-full" style={{ width: `${progress}%`, background: domain?.color || "#6366F1" }} />
                   </div>
                 </div>
-              )}
-              {goal.status === "active" && (
+              ) : null}
+              {goal.status === "active" ? (
                 <div className="flex gap-2 mt-3">
                   <button onClick={() => updateGoal.mutate({ id: goal.id as string, data: { status: "completed" } })}
                     className="text-xs text-green-600 hover:text-green-700 font-medium">Mark complete</button>
@@ -146,7 +146,7 @@ export default function GoalsPage() {
                   <button onClick={() => updateGoal.mutate({ id: goal.id as string, data: { status: "paused" } })}
                     className="text-xs text-gray-500 hover:text-gray-700 font-medium">Pause</button>
                 </div>
-              )}
+              ) : null}
             </div>
           );
         })}
