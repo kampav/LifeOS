@@ -4,7 +4,6 @@ import { api } from "@/lib/api";
 import { DOMAINS } from "@/lib/utils";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface ScoresData {
   life_score: number;
@@ -30,10 +29,7 @@ export default function MorePage() {
           const scoreText: string | null = score !== null ? String(Math.round(score)) : null;
 
           return (
-            <motion.div key={d.id}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.04 }}>
+            <div key={d.id}>
               <Link href={`/${d.id}`}
                 className="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-card hover:shadow-md transition-all active:scale-[0.98]">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
@@ -54,7 +50,7 @@ export default function MorePage() {
                   <ChevronRight className="w-4 h-4 text-gray-300" />
                 </div>
               </Link>
-            </motion.div>
+            </div>
           );
         })}
       </div>

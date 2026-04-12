@@ -15,9 +15,9 @@ set_secret() {
   echo "  Set: ${NAME}"
 }
 
-# Service account key — read from Downloads if present
-KEY_FILE="${HOME}/Downloads/key.json"
-[ -f "${KEY_FILE}" ] && set_secret "GCP_SA_KEY" "$(cat ${KEY_FILE})"
+# Service account key — find in Downloads by pattern
+KEY_FILE=$(ls "${HOME}/Downloads/gen-lang-client-"*.json 2>/dev/null | head -1)
+[ -f "${KEY_FILE}" ] && set_secret "GCP_SA_KEY" "$(cat ${KEY_FILE})" || echo "  WARN: SA key not found in ~/Downloads"
 
 # Backend secrets
 [ -n "${SUPABASE_URL}" ]         && set_secret "SUPABASE_URL"         "${SUPABASE_URL}"

@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { DOMAINS } from "@/lib/utils";
 import { Save, User, Bell, Shield, CreditCard } from "lucide-react";
-import { motion } from "framer-motion";
 
 const TIERS = { free: "Free", pro: "Pro", family: "Family", coach: "Coach" };
 
@@ -65,7 +64,7 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
+      <div key={tab}>
 
         {tab === "profile" && (
           <div className="bg-white rounded-2xl p-6 shadow-card space-y-4">
@@ -185,7 +184,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-      </motion.div>
+      </div>
     </div>
   );
 }

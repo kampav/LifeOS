@@ -20,7 +20,7 @@ export default function HabitsPage() {
   const [showForm, setShowForm] = useState(false);
   const { register, handleSubmit, reset } = useForm({ resolver: zodResolver(schema) });
 
-  const { data: habits = [] } = useQuery({ queryKey: ["habits"], queryFn: () => habitsApi.list().then(r => r.data) });
+  const { data: habits = [] } = useQuery({ queryKey: ["habits"], queryFn: () => habitsApi.list().then(r => Array.isArray(r.data) ? r.data : []), retry: false });
   const createHabit = useMutation({
     mutationFn: (data: Record<string, unknown>) => habitsApi.create(data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["habits"] }); setShowForm(false); reset(); },

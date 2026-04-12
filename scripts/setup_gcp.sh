@@ -55,7 +55,17 @@ source "$(dirname "$0")/../backend/.env" 2>/dev/null
 [ -n "$SUPABASE_URL" ]         && store_secret "supabase-url"         "$SUPABASE_URL"
 [ -n "$SUPABASE_SERVICE_KEY" ] && store_secret "supabase-service-key" "$SUPABASE_SERVICE_KEY"
 [ -n "$SUPABASE_ANON_KEY" ]    && store_secret "supabase-anon-key"    "$SUPABASE_ANON_KEY"
-store_secret "redis-url" "redis://localhost:6379/0"
+# Redis: use REDIS_URL from .env if set, else prompt
+if [ -n "$REDIS_URL" ] && [[ "$REDIS_URL" != *"localhost"* ]]; then
+  store_secret "redis-url" "$REDIS_URL"
+else
+  echo ""
+  echo "  !! Redis URL needed (Cloud Run can't use localhost)"
+  echo "  Get a free Upstash Redis URL: https://upstash.com"
+  echo -n "  Paste Upstash Redis URL (rediss://...): "
+  read UPSTASH_URL
+  [ -n "$UPSTASH_URL" ] && store_secret "redis-url" "$UPSTASH_URL" || echo "  WARN: redis-url not set — add manually later"
+fi
 
 echo ""
 echo "GCP setup complete!"

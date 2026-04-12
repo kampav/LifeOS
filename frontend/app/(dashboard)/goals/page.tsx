@@ -24,7 +24,7 @@ export default function GoalsPage() {
   const [filter, setFilter] = useState<string>("all");
   const { register, handleSubmit, reset, formState: { errors } } = useForm({ resolver: zodResolver(schema) });
 
-  const { data: goals = [] } = useQuery({ queryKey: ["goals"], queryFn: () => goalsApi.list().then(r => r.data) });
+  const { data: goals = [] } = useQuery({ queryKey: ["goals"], queryFn: () => goalsApi.list().then(r => Array.isArray(r.data) ? r.data : []), retry: false });
   const createGoal = useMutation({
     mutationFn: (data: Record<string, unknown>) => goalsApi.create(data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["goals"] }); setShowForm(false); reset(); },

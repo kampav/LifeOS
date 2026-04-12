@@ -1,5 +1,6 @@
 "use client";
-import { AICoachChat } from "@/components/life-os/AICoachChat";
+import dynamic from "next/dynamic";
+const AICoachChat = dynamic(() => import("@/components/life-os/AICoachChat").then(m => m.AICoachChat), { ssr: false });
 
 export default function CoachPage() {
   return (
