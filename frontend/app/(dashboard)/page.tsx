@@ -4,8 +4,12 @@ import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { usersApi, domainsApi, aiApi } from "@/lib/api";
 import { DOMAINS } from "@/lib/utils";
-import { LifeScore } from "@/components/life-os/LifeScore";
 import { DomainCard } from "@/components/life-os/DomainCard";
+
+const LifeScore = dynamic(
+  () => import("@/components/life-os/LifeScore").then(m => m.LifeScore),
+  { ssr: false, loading: () => <div className="w-40 h-40 rounded-full bg-gray-100 animate-pulse" /> }
+);
 import { QuickCapture } from "@/components/life-os/QuickCapture";
 import { Sparkles } from "lucide-react";
 
