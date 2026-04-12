@@ -31,7 +31,7 @@ export default function DashboardPage() {
     staleTime: 3_600_000,
   });
 
-  const firstName = profile?.name?.split(" ")[0] || "there";
+  const firstName = (profile?.full_name || profile?.name || "").split(" ")[0] || "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
