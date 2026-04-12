@@ -39,11 +39,11 @@ export default function DashboardPage() {
       const results = await Promise.allSettled(
         DOMAINS.map(d => domainsApi.score(d.id).then(r => ({ id: d.id, score: r.data.score as number })))
       );
-      return Object.fromEntries(
-        results
-          .filter((r): r is PromiseFulfilledResult<{ id: string; score: number }> => r.status === "fulfilled")
-          .map(r => [r.value.id, r.value.score])
-      );
+      const out: Record<string, number> = {};
+      results.forEach((r, i) => {
+        if (r.status === "fulfilled") out[DOMAINS[i].id] = r.value.score;
+      });
+      return out;
     },
     retry: false,
     staleTime: 300_000,
