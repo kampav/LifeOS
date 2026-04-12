@@ -12,8 +12,9 @@ export function NotificationBell() {
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["notifications"],
-    queryFn: () => api.get("/notifications?limit=15").then(r => r.data),
+    queryFn: () => api.get("/notifications?limit=15").then(r => Array.isArray(r.data) ? r.data : []),
     refetchInterval: 60_000,
+    retry: false,
   });
 
   const unread = notifications.filter((n: Record<string, unknown>) => !n.read).length;

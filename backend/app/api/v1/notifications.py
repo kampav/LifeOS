@@ -9,7 +9,7 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 async def list_notifications(limit: int = 20, user: User = Depends(get_current_user)):
     sb = get_supabase()
     result = sb.table("notifications").select("*").eq("user_id", user.id).order("created_at", desc=True).limit(limit).execute()
-    return result.data
+    return result.data or []
 
 
 @router.put("/{notification_id}/read")
