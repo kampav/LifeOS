@@ -35,8 +35,9 @@ def test_security_headers_present(client):
 
 
 def test_cors_allowed_origin(client):
-    r = client.options("/health", headers={"Origin": "http://localhost:3000"})
-    assert r.status_code in (200, 204)
+    r = client.get("/health", headers={"Origin": "http://localhost:3000"})
+    assert r.status_code == 200
+    assert "access-control-allow-origin" in r.headers
 
 
 def test_entry_domain_validation(client):

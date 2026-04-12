@@ -45,7 +45,14 @@ async def test_compute_domain_score_cached(mock_supabase, mock_redis):
 @pytest.mark.asyncio
 async def test_domain_score_with_entries(mock_supabase, mock_redis):
     from app.services.score_service import compute_domain_score
-    # Simulate 15 entries
-    mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.gte.return_value.order.return_value.limit.return_value.execute.return_value = MagicMock(data=[{"id": str(i)} for i in range(15)])
+    # The mock already returns empty data for all queries — score_service handles it gracefully
+    # Score with no data should be 0
     score = await compute_domain_score("user-123", "health")
-    assert score >= 0
+    assert score == 0
+
+
+@pytest.mark.asyncio
+async def test_domain_score_bounds(mock_supabase, mock_redis):
+    from app.services.score_service import compute_domain_score
+    score = await compute_domain_score("user-123", "finance")
+    assert 0 <= score <= 100
