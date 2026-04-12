@@ -1,19 +1,30 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { domainsApi, goalsApi } from "@/lib/api";
 import { getDomain } from "@/lib/utils";
-import { LifeScore } from "./LifeScore";
 import { MetricTile } from "./MetricTile";
 import { GoalProgress } from "./GoalProgress";
 import { EntryForm } from "./EntryForm";
-import { AICoachChat } from "./AICoachChat";
 import { InsightCard } from "./InsightCard";
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from "recharts";
-import { Plus, MessageCircle, X } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { Plus, MessageCircle } from "lucide-react";
+import { format, parseISO, isValid } from "date-fns";
+
+const LifeScore = dynamic(
+  () => import("./LifeScore").then(m => m.LifeScore),
+  { ssr: false, loading: () => <div className="w-16 h-16 rounded-full bg-gray-100 animate-pulse" /> }
+);
+
+const AICoachChat = dynamic(
+  () => import("./AICoachChat").then(m => m.AICoachChat),
+  { ssr: false, loading: () => <div className="h-40 bg-gray-50 rounded-xl animate-pulse" /> }
+);
+
+const DomainChart = dynamic(
+  () => import("./DomainChart").then(m => m.DomainChart),
+  { ssr: false, loading: () => <div className="h-48 bg-gray-50 rounded-xl animate-pulse" /> }
+);
 
 interface DomainConfig {
   quickMetrics?: Array<{ key: string; label: string; unit: string }>;
@@ -39,8 +50,9 @@ export function DomainPage({ domainId, config = {} }: Props) {
 
   const { data: goals = [] } = useQuery({
     queryKey: ["goals", domainId],
-    queryFn: () => goalsApi.list({ domain: domainId }).then(r => r.data),
+    queryFn: () => goalsApi.list({ domain: domainId }).then(r => Array.isArray(r.data) ? r.data : []),
     staleTime: 120_000,
+    retry: false,
   });
 
   const { data: insights } = useQuery({
@@ -49,13 +61,17 @@ export function DomainPage({ domainId, config = {} }: Props) {
     staleTime: 3_600_000,
   });
 
+  const safeDate = (s: unknown) => {
+    try { const d = parseISO(s as string); return isValid(d) ? format(d, "MMM d") : ""; } catch { return ""; }
+  };
+
   // Build chart data from recent entries
   const chartData = (dash?.recent_entries || [])
     .filter((e: Record<string, unknown>) => e.value != null)
     .slice(0, 14)
     .reverse()
     .map((e: Record<string, unknown>) => ({
-      date: format(parseISO(e.logged_at as string), "MMM d"),
+      date: safeDate(e.logged_at),
       value: e.value,
       label: e.title,
     }));
@@ -115,26 +131,7 @@ export function DomainPage({ domainId, config = {} }: Props) {
 
           {/* Trend chart */}
           {chartData.length > 1 && (
-            <div className="bg-white rounded-2xl p-5 shadow-card">
-              <h3 className="font-semibold text-gray-900 mb-4">Recent Trend</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id={`grad-${domainId}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={domain.color} stopOpacity={0.15} />
-                      <stop offset="95%" stopColor={domain.color} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} width={35} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 12, border: "1px solid #F3F4F6", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", fontSize: 12 }}
-                  />
-                  <Area type="monotone" dataKey="value" stroke={domain.color} strokeWidth={2} fill={`url(#grad-${domainId})`} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <DomainChart data={chartData} color={domain.color} domainId={domainId} />
           )}
 
           {/* Goal progress */}
@@ -160,7 +157,7 @@ export function DomainPage({ domainId, config = {} }: Props) {
                       {e.value != null ? (
                         <p className="text-sm font-semibold text-gray-900">{e.value as number} <span className="text-gray-400 font-normal text-xs">{e.unit as string}</span></p>
                       ) : null}
-                      <p className="text-xs text-gray-400">{format(parseISO(e.logged_at as string), "MMM d")}</p>
+                      <p className="text-xs text-gray-400">{safeDate(e.logged_at)}</p>
                     </div>
                   </div>
                 ))}
