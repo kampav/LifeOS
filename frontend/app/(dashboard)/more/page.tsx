@@ -40,9 +40,9 @@ export default function MorePage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {score !== null && (
-                    <span className="text-sm font-bold" style={{ color: d.color }}>{formatScore(score)}</span>
-                  )}
+                  {score !== null ? (
+                    <span className="text-sm font-bold" style={{ color: d.color }}>{formatScore(score as number)}</span>
+                  ) : null}
                   <ChevronRight className="w-4 h-4 text-gray-300" />
                 </div>
               </Link>

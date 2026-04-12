@@ -141,12 +141,12 @@ export function DomainPage({ domainId, config = {} }: Props) {
           {goals.length > 0 && <GoalProgress goals={goals} />}
 
           {/* AI Insight */}
-          {insights?.insights && (
+          {insights?.insights ? (
             <InsightCard domain={domainId} content={insights.insights} />
-          )}
+          ) : null}
 
           {/* Recent entries */}
-          {dash?.recent_entries?.length > 0 && (
+          {(dash?.recent_entries?.length ?? 0) > 0 && (
             <div className="bg-white rounded-2xl p-5 shadow-card">
               <h3 className="font-semibold text-gray-900 mb-4">Recent Entries</h3>
               <div className="space-y-2">
@@ -154,12 +154,12 @@ export function DomainPage({ domainId, config = {} }: Props) {
                   <div key={e.id as string} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                     <div>
                       <p className="text-sm text-gray-800">{(e.title as string) || (e.entry_type as string)}</p>
-                      {e.notes && <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{e.notes as string}</p>}
+                      {e.notes ? <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{e.notes as string}</p> : null}
                     </div>
                     <div className="text-right flex-shrink-0 ml-4">
-                      {e.value != null && (
+                      {e.value != null ? (
                         <p className="text-sm font-semibold text-gray-900">{e.value as number} <span className="text-gray-400 font-normal text-xs">{e.unit as string}</span></p>
-                      )}
+                      ) : null}
                       <p className="text-xs text-gray-400">{format(parseISO(e.logged_at as string), "MMM d")}</p>
                     </div>
                   </div>
