@@ -7,7 +7,8 @@ import { WheelOfLife } from "@/components/life-os/WheelOfLife";
 import { LifeScore } from "@/components/life-os/LifeScore";
 import { DomainCard } from "@/components/life-os/DomainCard";
 import { AICoachChat } from "@/components/life-os/AICoachChat";
-import { Sparkles, Plus } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { QuickCapture } from "@/components/life-os/QuickCapture";
 
 export default function DashboardPage() {
   const [showChat, setShowChat] = useState(false);
@@ -94,10 +95,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Quick capture FAB */}
-      <button className="fixed bottom-24 md:bottom-8 right-6 w-14 h-14 bg-primary rounded-2xl shadow-xl flex items-center justify-center hover:bg-primary/90 transition-all hover:scale-105 z-40">
-        <Plus className="w-6 h-6 text-white" />
-      </button>
+      <QuickCapture />
     </div>
   );
 }

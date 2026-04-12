@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import list
+from typing import List
 import os
 
 
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     GCS_BUCKET: str = "life-os-user-files-prod"
 
     # CORS
-    ALLOWED_ORIGINS: list[str] = [
+    ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",
         "https://lifeos.ai",
         "https://staging.lifeos.ai",
