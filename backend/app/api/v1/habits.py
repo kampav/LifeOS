@@ -70,7 +70,7 @@ async def _update_streak(habit_id: str, user_id: str, logged_date: date):
     """Recalculate streak after a log."""
     sb = get_supabase()
     logs = sb.table("habit_logs").select("logged_date,completed").eq("habit_id", habit_id).eq("user_id", user_id).eq("completed", True).order("logged_date", desc=True).limit(400).execute()
-    dates = {log["logged_date"] for log in logs.data}
+    dates = {log["logged_date"] for log in (logs.data or [])}
     streak = 0
     check = logged_date
     while check.isoformat() in dates:

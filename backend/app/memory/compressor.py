@@ -17,9 +17,9 @@ async def build_domain_context(user_id: str, domain: str, days: int = 7) -> str:
     goals = sb.table("goals").select("title,current_value,target_value,unit,status").eq("user_id", user_id).eq("domain", domain).eq("status", "active").limit(5).execute()
     habits = sb.table("habits").select("name,current_streak,frequency").eq("user_id", user_id).eq("domain", domain).eq("is_active", True).limit(5).execute()
 
-    entry_lines = [f"- {e.get('logged_at','')[:10]}: {e.get('title','')} {e.get('value','')}{e.get('unit','')}" for e in entries.data]
-    goal_lines = [f"- {g['title']}: {g.get('current_value',0)}/{g.get('target_value','?')} {g.get('unit','')}" for g in goals.data]
-    habit_lines = [f"- {h['name']} ({h['frequency']}) streak:{h.get('current_streak',0)}d" for h in habits.data]
+    entry_lines = [f"- {e.get('logged_at','')[:10]}: {e.get('title','')} {e.get('value','')}{e.get('unit','')}" for e in (entries.data or [])]
+    goal_lines = [f"- {g['title']}: {g.get('current_value',0)}/{g.get('target_value','?')} {g.get('unit','')}" for g in (goals.data or [])]
+    habit_lines = [f"- {h['name']} ({h['frequency']}) streak:{h.get('current_streak',0)}d" for h in (habits.data or [])]
 
     return f"""[{domain.upper()} CONTEXT — {datetime.now().strftime('%Y-%m-%d')}]
 ACTIVE GOALS ({len(goal_lines)}):

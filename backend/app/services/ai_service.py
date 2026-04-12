@@ -15,19 +15,19 @@ log = get_logger()
 
 # Model routing
 MODEL_ROUTER = {
-    "life_coaching":   "claude-sonnet-4-5",
+    "life_coaching":   "claude-sonnet-4-6",
     "data_analysis":   "gemini-1.5-pro",
     "quick_response":  "gemini-1.5-flash",
     "document_review": "gemini-1.5-pro",
     "daily_brief":     "claude-haiku-4-5-20251001",
-    "weekly_review":   "claude-sonnet-4-5",
+    "weekly_review":   "claude-sonnet-4-6",
     "health_sensitive": "ollama/llama3.2",
     "insights":        "gemini-1.5-flash",
 }
 
 # Approx cost per 1M tokens (USD)
 MODEL_COSTS = {
-    "claude-sonnet-4-5": {"input": 3.0, "output": 15.0},
+    "claude-sonnet-4-6": {"input": 3.0, "output": 15.0},
     "claude-haiku-4-5-20251001": {"input": 0.25, "output": 1.25},
     "gemini-1.5-pro": {"input": 1.25, "output": 5.0},
     "gemini-1.5-flash": {"input": 0.075, "output": 0.30},

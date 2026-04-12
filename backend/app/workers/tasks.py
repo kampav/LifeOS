@@ -24,9 +24,9 @@ def send_daily_briefs(self):
     try:
         sb = get_supabase()
         users = sb.table("profiles").select("id").eq("onboarding_completed", True).execute()
-        for user in users.data:
+        for user in (users.data or []):
             run_async(generate_daily_brief(user["id"]))
-        log.info("daily_briefs_sent", count=len(users.data))
+        log.info("daily_briefs_sent", count=len(users.data or []))
     except Exception as exc:
         log.error("daily_brief_task_failed", error=str(exc))
         raise self.retry(exc=exc, countdown=300)
@@ -42,10 +42,10 @@ def generate_weekly_reviews(self):
     try:
         sb = get_supabase()
         users = sb.table("profiles").select("id,subscription_tier").eq("onboarding_completed", True).execute()
-        for user in users.data:
+        for user in (users.data or []):
             # Free users get weekly review, paid get more
             run_async(generate_weekly_review(user["id"]))
-        log.info("weekly_reviews_generated", count=len(users.data))
+        log.info("weekly_reviews_generated", count=len(users.data or []))
     except Exception as exc:
         log.error("weekly_review_task_failed", error=str(exc))
         raise self.retry(exc=exc, countdown=600)

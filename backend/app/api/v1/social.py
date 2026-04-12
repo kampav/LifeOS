@@ -94,7 +94,7 @@ async def due_checkins(user: User = Depends(get_current_user)):
     freq_days = {"weekly": 7, "monthly": 30, "quarterly": 90, "yearly": 365}
     today = date.today()
     due = []
-    for c in contacts.data:
+    for c in (contacts.data or []):
         freq = c.get("desired_frequency")
         last = c.get("last_contact_date")
         if not freq:

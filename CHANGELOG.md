@@ -5,6 +5,15 @@ Format: `[version] YYYY-MM-DD — Persona — Description`
 
 ---
 
+## [0.3.1] 2026-04-12 — Backend Hardening
+
+### Fixed (Backend Engineer + SRE)
+- **Critical:** CORS misconfiguration — production Cloud Run frontend URL not in `ALLOWED_ORIGINS`, blocking every API call. Added `https://life-os-frontend-574662870196.europe-west2.run.app` to default `config.py`
+- **Critical:** Supabase null safety — `compressor.py`, `habits.py` streak calc, `social.py` due-checkins, and `workers/tasks.py` all iterated `result.data` without `or []` guard, crashing on empty tables
+- **Fixed:** Model IDs — updated `ai_service.py` and `review_service.py` from deprecated `claude-sonnet-4-5` to `claude-sonnet-4-6`
+
+---
+
 ## [0.3.0] 2026-04-12 — Stability Release
 
 ### Fixed (SRE + Frontend)

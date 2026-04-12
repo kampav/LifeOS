@@ -41,7 +41,7 @@ async def generate_weekly_review(user_id: str) -> dict:
     context = await build_full_context(user_id)
     memories = await get_memories(user_id, "weekly review themes patterns", limit=5)
     prompt = f"USER CONTEXT:\n{context}\n\nMEMORIES:\n{memories}\n\nTASK: {WEEKLY_REVIEW_PROMPT}"
-    content, _, _ = await call_claude("claude-sonnet-4-5", WEEKLY_REVIEW_PROMPT, [{"role": "user", "content": prompt}], max_tokens=1200)
+    content, _, _ = await call_claude("claude-sonnet-4-6", WEEKLY_REVIEW_PROMPT, [{"role": "user", "content": prompt}], max_tokens=1200)
 
     # Store key insights in Mem0
     await store_memory(user_id, f"Weekly review {datetime.now().strftime('%Y-%m-%d')}: {content[:300]}")

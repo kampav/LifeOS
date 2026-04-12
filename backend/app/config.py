@@ -38,6 +38,7 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "https://lifeos.ai",
         "https://staging.lifeos.ai",
+        "https://life-os-frontend-574662870196.europe-west2.run.app",
     ]
 
     # Rate limits (per hour for free tier)

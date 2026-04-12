@@ -22,17 +22,24 @@ def get_redis():
 
 
 async def check_rate_limit(user_id: str, tier: str, limit_type: str = "api_calls"):
-    r = get_redis()
-    window = 3600 if limit_type == "api_calls" else 86400
-    key = f"rl:{user_id}:{limit_type}:{int(time.time() // window)}"
-    limit = RATE_LIMITS.get(tier, RATE_LIMITS["free"])[limit_type]
-    count = await r.incr(key)
-    if count == 1:
-        await r.expire(key, window)
-    if count > limit:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Rate limit exceeded: {limit} {limit_type} per {'hour' if window == 3600 else 'day'}",
-            headers={"X-RateLimit-Limit": str(limit), "X-RateLimit-Remaining": "0"},
-        )
-    return limit - count
+    """Fail-open: if Redis is unavailable, skip rate limiting rather than blocking all requests."""
+    try:
+        r = get_redis()
+        window = 3600 if limit_type == "api_calls" else 86400
+        key = f"rl:{user_id}:{limit_type}:{int(time.time() // window)}"
+        limit = RATE_LIMITS.get(tier, RATE_LIMITS["free"])[limit_type]
+        count = await r.incr(key)
+        if count == 1:
+            await r.expire(key, window)
+        if count > limit:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Rate limit exceeded: {limit} {limit_type} per {'hour' if window == 3600 else 'day'}",
+                headers={"X-RateLimit-Limit": str(limit), "X-RateLimit-Remaining": "0"},
+            )
+        return limit - count
+    except HTTPException:
+        raise
+    except Exception:
+        # Redis unavailable — fail open (allow request through)
+        return 999
