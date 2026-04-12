@@ -12,7 +12,7 @@ class Settings(BaseSettings):
 
     # Auth / Supabase
     SUPABASE_URL: str
-    SUPABASE_ANON_KEY: str
+    SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_KEY: str
     JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
