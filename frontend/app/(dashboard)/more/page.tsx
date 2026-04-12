@@ -1,15 +1,20 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { DOMAINS, formatScore } from "@/lib/utils";
+import { DOMAINS } from "@/lib/utils";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
+interface ScoresData {
+  life_score: number;
+  domain_scores: Record<string, number>;
+}
+
 export default function MorePage() {
-  const { data: scores } = useQuery({
+  const { data: scores } = useQuery<ScoresData>({
     queryKey: ["life-score"],
-    queryFn: () => api.get("/scores/all").then(r => r.data),
+    queryFn: () => api.get("/scores/all").then(r => r.data as ScoresData),
     staleTime: 300_000,
   });
 
@@ -20,7 +25,10 @@ export default function MorePage() {
 
       <div className="space-y-2">
         {DOMAINS.map((d, i) => {
-          const score = scores?.domain_scores?.[d.id] ?? null;
+          const rawScore = scores?.domain_scores?.[d.id];
+          const score: number | null = rawScore != null ? Number(rawScore) : null;
+          const scoreText: string | null = score !== null ? String(Math.round(score)) : null;
+
           return (
             <motion.div key={d.id}
               initial={{ opacity: 0, x: -12 }}
@@ -40,9 +48,9 @@ export default function MorePage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {score !== null ? (
-                    <span className="text-sm font-bold" style={{ color: d.color }}>{formatScore(score as number)}</span>
-                  ) : null}
+                  {scoreText !== null && (
+                    <span className="text-sm font-bold" style={{ color: d.color }}>{scoreText}</span>
+                  )}
                   <ChevronRight className="w-4 h-4 text-gray-300" />
                 </div>
               </Link>
@@ -51,7 +59,6 @@ export default function MorePage() {
         })}
       </div>
 
-      {/* Quick links */}
       <div className="mt-8 grid grid-cols-2 gap-3">
         {[
           { href: "/review", icon: "✨", label: "AI Reviews" },
