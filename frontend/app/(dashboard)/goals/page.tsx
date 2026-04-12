@@ -125,7 +125,7 @@ export default function GoalsPage() {
                     {domain && <span className="text-xs font-medium px-2 py-0.5 rounded-full mt-0.5 inline-block" style={{ background: domain.color + "20", color: domain.color }}>{domain.label}</span>}
                   </div>
                 </div>
-                {goal.target_date && <span className="text-xs text-gray-400">{new Date(goal.target_date as string).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>}
+                {goal.target_date ? <span className="text-xs text-gray-400">{new Date(goal.target_date as string).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span> : null}
               </div>
               {goal.target_value && (
                 <div>

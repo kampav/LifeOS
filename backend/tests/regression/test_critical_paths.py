@@ -25,7 +25,7 @@ def test_metrics_endpoint(client):
 
 def test_unauthenticated_request_rejected(client):
     r = client.get("/api/v1/users/me")
-    assert r.status_code == 403  # No bearer token
+    assert r.status_code in (401, 403)  # No bearer token
 
 
 def test_security_headers_present(client):

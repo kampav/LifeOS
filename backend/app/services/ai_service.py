@@ -4,7 +4,7 @@ Routes to cheapest model that can handle the task.
 Tier-3 sensitive data always goes to local Ollama.
 """
 import anthropic
-import google.generativeai as genai
+from google import genai as google_genai
 import httpx
 from app.config import settings
 from app.observability.logging import get_logger
@@ -67,10 +67,9 @@ async def call_claude(model: str, system: str, messages: list[dict], max_tokens:
 
 
 async def call_gemini(model: str, prompt: str, max_tokens: int = 1000) -> tuple[str, int, int]:
-    genai.configure(api_key=settings.GOOGLE_AI_API_KEY)
+    client = google_genai.Client(api_key=settings.GOOGLE_AI_API_KEY)
     t0 = time.time()
-    m = genai.GenerativeModel(model)
-    resp = m.generate_content(prompt, generation_config={"max_output_tokens": max_tokens})
+    resp = client.models.generate_content(model=model, contents=prompt, config={"max_output_tokens": max_tokens})
     latency = time.time() - t0
     content = resp.text
     # Gemini doesn't always return token counts, approximate
