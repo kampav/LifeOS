@@ -1,13 +1,23 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { usersApi, domainsApi, aiApi } from "@/lib/api";
 import { DOMAINS } from "@/lib/utils";
-import { WheelOfLife } from "@/components/life-os/WheelOfLife";
 import { LifeScore } from "@/components/life-os/LifeScore";
 import { DomainCard } from "@/components/life-os/DomainCard";
 import { QuickCapture } from "@/components/life-os/QuickCapture";
 import { Sparkles } from "lucide-react";
+
+const WheelOfLife = dynamic(
+  () => import("@/components/life-os/WheelOfLife").then(m => m.WheelOfLife),
+  { ssr: false, loading: () => <div className="bg-white rounded-2xl p-6 shadow-card h-[380px] animate-pulse" /> }
+);
+
+const AICoachChat = dynamic(
+  () => import("@/components/life-os/AICoachChat").then(m => m.AICoachChat),
+  { ssr: false, loading: () => <div className="h-40 animate-pulse bg-gray-50 rounded-xl" /> }
+);
 
 export default function DashboardPage() {
   const [showChat, setShowChat] = useState(false);
@@ -116,18 +126,11 @@ export default function DashboardPage() {
             <span className="font-semibold text-gray-900">AI Life Coach</span>
             <button onClick={() => setShowChat(false)} className="text-gray-400 hover:text-gray-600 text-sm">Close</button>
           </div>
-          {/* Lazy import to avoid SSR issues */}
-          <LazyChat name={firstName} />
+          <AICoachChat initialMessage={`Hi ${firstName}! What would you like to work on today?`} />
         </div>
       )}
 
       <QuickCapture />
     </div>
   );
-}
-
-// Separate client component to avoid hydration issues
-function LazyChat({ name }: { name: string }) {
-  const { AICoachChat } = require("@/components/life-os/AICoachChat");
-  return <AICoachChat initialMessage={`Hi ${name}! What would you like to work on today?`} />;
 }
