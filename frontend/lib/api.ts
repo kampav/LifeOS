@@ -18,16 +18,10 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Global error handler
+// Global error handler — no redirects here, let components handle auth state
 api.interceptors.response.use(
   (r) => r,
   async (error: AxiosError) => {
-    if (error.response?.status === 401 && typeof window !== "undefined") {
-      // Only redirect if we're not already on an auth page
-      if (!window.location.pathname.startsWith("/login") && !window.location.pathname.startsWith("/register")) {
-        window.location.href = "/login";
-      }
-    }
     return Promise.reject(error);
   }
 );
