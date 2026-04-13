@@ -1,5 +1,6 @@
 """Domain and life score computation. Redis cache optional (1 hour TTL)."""
 from app.db.client import get_supabase
+from app.security.rate_limiter import get_redis
 from datetime import datetime, timezone, timedelta
 
 BASE_WEIGHTS = {
@@ -11,7 +12,6 @@ BASE_WEIGHTS = {
 
 async def _cache_get(key: str):
     try:
-        from app.security.rate_limiter import get_redis
         r = get_redis()
         return await r.get(key)
     except Exception:
@@ -20,7 +20,6 @@ async def _cache_get(key: str):
 
 async def _cache_set(key: str, value: int, ttl: int = 3600):
     try:
-        from app.security.rate_limiter import get_redis
         r = get_redis()
         await r.setex(key, ttl, value)
     except Exception:
