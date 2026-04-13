@@ -34,7 +34,7 @@ jobs:
           GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
           REDIS_URL: redis://localhost:6379/0
       - name: Security scan
-        run: pip audit || true   # warn only, don't block
+        run: pip-audit --desc || true   # warn only, don't block
 
   test-frontend:
     runs-on: ubuntu-latest
@@ -98,7 +98,7 @@ jobs:
           gcloud run deploy life-os-api-staging \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/api:${{ github.sha }} \
             --region ${{ env.REGION }} --platform managed \
-            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,REDIS_URL=redis-url:latest" \
+            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,SUPABASE_ANON_KEY=supabase-anon-key:latest,JWT_SECRET=jwt-secret:latest,REDIS_URL=redis-url:latest" \
             --set-env-vars="ENVIRONMENT=staging,DEBUG=false" \
             --allow-unauthenticated --min-instances=0 --max-instances=5
       - name: Deploy Frontend to staging
@@ -129,7 +129,7 @@ jobs:
           gcloud run deploy life-os-api \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/api:${{ github.sha }} \
             --region ${{ env.REGION }} --platform managed \
-            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,SUPABASE_ANON_KEY=supabase-anon-key:latest,REDIS_URL=redis-url:latest" \
+            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,SUPABASE_ANON_KEY=supabase-anon-key:latest,JWT_SECRET=jwt-secret:latest,REDIS_URL=redis-url:latest" \
             --set-env-vars="ENVIRONMENT=production,DEBUG=false" \
             $TRAFFIC_FLAG --allow-unauthenticated \
             --min-instances=1 --max-instances=20 --cpu=2 --memory=2Gi

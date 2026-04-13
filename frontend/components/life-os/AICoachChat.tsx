@@ -9,30 +9,57 @@ interface Message { role: "user" | "assistant"; content: string; }
 interface Props {
   domain?: string;
   initialMessage?: string;
+  conversationId?: string;
+  onConversationCreated?: (id: string) => void;
 }
 
-export function AICoachChat({ domain, initialMessage }: Props) {
+export function AICoachChat({ domain, initialMessage, conversationId, onConversationCreated }: Props) {
   const [messages, setMessages] = useState<Message[]>(
     initialMessage ? [{ role: "assistant", content: initialMessage }] : []
   );
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [convId, setConvId] = useState<string | undefined>();
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [convId, setConvId] = useState<string | undefined>(conversationId);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Load existing conversation when conversationId changes
+  useEffect(() => {
+    if (!conversationId) {
+      setMessages(initialMessage ? [{ role: "assistant", content: initialMessage }] : []);
+      setConvId(undefined);
+      return;
+    }
+    setLoadingHistory(true);
+    setMessages([]);
+    aiApi.getConversation(conversationId)
+      .then(({ data }) => {
+        const msgs: Message[] = (data.messages || []).map(
+          (m: { role: "user" | "assistant"; content: string }) => ({ role: m.role, content: m.content })
+        );
+        setMessages(msgs);
+        setConvId(conversationId);
+      })
+      .catch(() => setMessages([]))
+      .finally(() => setLoadingHistory(false));
+  }, [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   async function send() {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || loadingHistory) return;
     const msg = input.trim();
     setInput("");
     setMessages(m => [...m, { role: "user", content: msg }]);
     setLoading(true);
     try {
       const { data } = await aiApi.chat(msg, domain, convId);
-      setConvId(data.conversation_id);
+      if (!convId && data.conversation_id) {
+        setConvId(data.conversation_id);
+        onConversationCreated?.(data.conversation_id);
+      }
       setMessages(m => [...m, { role: "assistant", content: data.message }]);
     } catch {
       setMessages(m => [...m, { role: "assistant", content: "Sorry, I couldn't connect. Please try again." }]);
@@ -56,7 +83,17 @@ export function AICoachChat({ domain, initialMessage }: Props) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
-        {messages.length === 0 && (
+        {loadingHistory && (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex gap-1">
+              {[0, 1, 2].map(i => (
+                <motion.div key={i} className="w-2 h-2 bg-gray-300 rounded-full"
+                  animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }} />
+              ))}
+            </div>
+          </div>
+        )}
+        {!loadingHistory && messages.length === 0 && (
           <div className="text-center py-8">
             <Bot className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 text-sm">Ask me anything about your {domain || "life"}.</p>
@@ -99,9 +136,10 @@ export function AICoachChat({ domain, initialMessage }: Props) {
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
             placeholder="Ask your life coach…"
-            className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            disabled={loadingHistory}
+            className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
           />
-          <button onClick={send} disabled={!input.trim() || loading}
+          <button onClick={send} disabled={!input.trim() || loading || loadingHistory}
             className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center disabled:opacity-40 hover:bg-primary/90 transition-colors">
             <Send className="w-4 h-4 text-white" />
           </button>

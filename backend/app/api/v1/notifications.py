@@ -12,6 +12,13 @@ async def list_notifications(limit: int = 20, user: User = Depends(get_current_u
     return result.data or []
 
 
+@router.put("/read-all")
+async def mark_all_read(user: User = Depends(get_current_user)):
+    sb = get_supabase()
+    result = sb.table("notifications").update({"read": True}).eq("user_id", user.id).eq("read", False).execute()
+    return {"status": "ok", "updated": len(result.data or [])}
+
+
 @router.put("/{notification_id}/read")
 async def mark_read(notification_id: str, user: User = Depends(get_current_user)):
     sb = get_supabase()

@@ -51,6 +51,7 @@ export const aiApi = {
   chat: (message: string, domain?: string, conversationId?: string) =>
     api.post("/ai/chat", { message, domain, conversation_id: conversationId }),
   conversations: () => api.get("/ai/conversations"),
+  getConversation: (id: string) => api.get(`/ai/conversations/${id}`),
   dailyBrief: () => api.get("/ai/daily-brief"),
   weeklyReview: () => api.post("/ai/weekly-review"),
   memory: () => api.get("/ai/memory"),

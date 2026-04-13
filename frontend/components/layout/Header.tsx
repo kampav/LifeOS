@@ -25,11 +25,7 @@ export function NotificationBell() {
   });
 
   const markAllRead = useMutation({
-    mutationFn: async () => {
-      await Promise.all(
-        notifications.filter((n: Record<string, unknown>) => !n.read).map((n: Record<string, unknown>) => api.put(`/notifications/${n.id}/read`))
-      );
-    },
+    mutationFn: () => api.put("/notifications/read-all"),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 

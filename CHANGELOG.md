@@ -5,6 +5,25 @@ Format: `[version] YYYY-MM-DD — Persona — Description`
 
 ---
 
+## [0.3.2] 2026-04-13 — Sprint 3 Complete
+
+### Added (Full-Stack)
+- **Backend:** `PUT /api/v1/notifications/read-all` — marks all unread in a single DB call; route ordered before `/{id}/read` to avoid path capture
+- **Backend:** `pip-audit` added to `requirements.txt`; CI security scan fixed (`pip audit` → `pip-audit --desc`)
+- **Backend:** CI deploy secrets hardened — `SUPABASE_ANON_KEY` added to staging, `JWT_SECRET` added to both staging and production `--set-secrets`
+- **Frontend:** AI Coach page rebuilt — desktop `w-72` sidebar + mobile slide-in drawer with conversation history, domain badges, `formatDistanceToNow` timestamps
+- **Frontend:** `AICoachChat` — `conversationId` + `onConversationCreated` props; loads existing conversations on mount; `key` prop forces remount on switch
+- **Frontend:** `Header.tsx` mark-all-read replaced N parallel calls with single `PUT /notifications/read-all`
+- **Frontend:** `aiApi.getConversation(id)` added to `lib/api.ts`
+- **Tests:** `test_ai_coach.py` — 12 tests: chat, conversations, rate limiting, daily brief, weekly review, memory endpoints
+- **Tests:** `test_notifications.py` — 7 tests: list, mark-read, mark-all-read (incl. null guard), delete, unauthenticated rejection
+
+### Fixed
+- `ai_service.py` — `google-genai` import moved inside `call_gemini()` to fix `ImportError` in environments without the package
+- `score_service.py` — `get_redis` promoted to module-level import (was lazy inside helpers), fixing CI `AttributeError`
+
+---
+
 ## [0.3.1] 2026-04-12 — Backend Hardening
 
 ### Fixed (Backend Engineer + SRE)
