@@ -54,8 +54,11 @@ def test_chat_new_conversation(client, mock_supabase):
     assert r.status_code == 200
     data = r.json()
     assert "conversation_id" in data
-    assert data["message"] == "Test AI response"
-    assert data["model_used"] == "claude-sonnet-4-6"
+    # message is now a JSON CoachResponse string
+    import json
+    coach = json.loads(data["message"])
+    assert "sections" in coach
+    assert coach["sections"][0]["content"] == "Test AI response"
 
 
 def test_chat_with_domain(client, mock_supabase):

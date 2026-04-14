@@ -45,9 +45,27 @@ class Settings(BaseSettings):
     RATE_LIMIT_FREE_API: int = 100
     RATE_LIMIT_FREE_AI_DAILY: int = 10
 
+    # MCP
+    MEM0_MCP_URL: str = ""
+    LIFE_OS_API_TOKEN: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = True
 
 
 settings = Settings()
+
+# Token budgets per PRD §13
+TOKEN_BUDGETS = {
+    "supervisor_input": 2200,
+    "supervisor_output": 500,
+    "domain_agent_input": 1800,
+    "domain_agent_output": 400,
+    "personalisation_block": 80,
+    "expertise_block": 120,
+    "system_prompt": 500,
+    "domain_context": 800,
+    "memory_block": 200,
+    "conv_history": 600,
+}

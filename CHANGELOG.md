@@ -5,6 +5,83 @@ Format: `[version] YYYY-MM-DD — Persona — Description`
 
 ---
 
+## [0.5.0] 2026-04-14 — Sprint 5: Multi-Agent + MCP + Personalisation
+
+### Added (Backend)
+- **Multi-agent architecture:** `backend/app/agents/` — supervisor + 7 domain agents (health→Ollama Tier 3, all others→Haiku) + 2 task agents (review, inbox)
+- **Supervisor:** `supervisor.py` — routes messages to domain agents, supports parallel cross-domain calls, max 3 tool calls per turn
+- **Domain agents:** `domain_agents/` — health, finance, family, social, growth, career, property. Health + sensitive finance hardwired to `health_sensitive` intent (Ollama)
+- **Context system:** `agents/context.py` — `detect_domain()` (zero tokens, keyword scoring), `build_system_prompt()` (≤500 tokens), `build_personalisation_block()` (≤80 tokens), `EXPERTISE_BLOCKS` for 7 domains
+- **MCP server:** `app/mcp/lifeos_server.py` — 5 tools exposed to Claude Desktop: `get_life_summary`, `create_task`, `get_upcoming_dates`, `log_entry`, `ask_coach`. Auth via `LIFE_OS_API_TOKEN`
+- **MCP client:** `app/mcp/mcp_client.py` — `build_mcp_servers()` attaches Google Workspace + Mem0 servers based on user integrations
+- **MCP sidecars:** `health_mcp.py`, `finance_mcp.py` — internal context fetchers, never exposed externally
+- **Personalisation API:** `GET/PATCH /users/me/personalisation`, `POST /reset`, `GET /learning`, `POST /undo` — 7 fields: tone, detail, domain weights, alert cadence, accent colour, layout density, font size
+- **MCP tokens API:** `GET/POST/DELETE /mcp/tokens`, `GET /mcp/tools`, `GET /mcp/server-config`
+- **Disclaimers:** `app/security/disclaimers.py` — `FINANCIAL_DISCLAIMER`, `HEALTH_DISCLAIMER`, `AI_TRANSPARENCY` with `inject_disclaimer()`
+- **CoachResponse models:** `MetricTile`, `CoachSection`, `QuickAction`, `CoachResponse` Pydantic models in `models/conversation.py`
+- **Token budgets:** `TOKEN_BUDGETS` dict in `config.py` (all PRD §13 values)
+- **Celery:** `run_weekly_personalisation_calibration` — Monday 3 AM UTC, nudges domain weights toward observed engagement
+- **DB migrations:** `007_mcp_tokens.sql`, `008_personalisation.sql` (with auto-create trigger + RLS)
+- **Tests:** `test_supervisor.py` (5 tests), `test_personalisation.py` (4 tests) — 39/39 passing
+
+### Changed (Backend)
+- **`POST /ai/chat`** now routes through supervisor; response `message` is JSON-serialised `CoachResponse` (backwards-compatible — frontend parses if JSON, falls back to plain text)
+- **`compute_life_score()`** accepts optional `weights: dict[str,int]` from `user_personalisation` — falls back to declared_priorities if not provided
+- **`fastapi` upgraded** to ≥0.135.0 for starlette 1.0 compatibility (required by `mcp>=1.0.0`)
+
+### Added (Frontend)
+- **`CoachResponse.tsx`** — renders structured sections (insight/data/list/question/warning/success), metric tiles, quick action buttons, created-items banner. Falls back to plain text
+- **`AICoachChat.tsx`** — detects JSON CoachResponse and renders `<CoachResponse>`; adds paperclip button (wired up in Sprint 7); `data-role="assistant"` on message bubbles for E2E
+- **`/settings/preferences`** page — tone picker, detail selector, domain weight sliders, alert cadence, accent colour swatches (12 + custom), layout density, font size
+- **`PersonalisationInit.tsx`** — fetches prefs on session mount and calls `applyPersonalisation()` (CSS variable injection)
+- **`lib/personalisation.ts`** — `applyPersonalisation()`, `savePreference()` (debounced 1s), `hexToRgba()`
+- **`lib/api.ts`** — `personalisationApi`, `mcpApi`, `notificationsApi` added
+
+---
+
+## [0.7.0] 2026-04-14 — Sprint 7: Document Upload + Google Workspace MCP
+
+### Added (Backend)
+- **Documents API:** `POST /coach/upload` (up to 5 files, 50 MB each), `GET /coach/upload/{id}/status`, `POST /coach/upload/{id}/confirm` (single logical transaction), `POST /coach/upload/{id}/skip`, `GET /coach/uploads`
+- **Document service:** `app/services/document_service.py` — `extract_content()` (PyMuPDF for PDF, python-docx for DOCX, Gemini vision for images), `classify_sensitivity()` (zero-token regex: tier 3 = health, tier 2 = finance, tier 1 = general), `process_document()` (routes to `health_sensitive` intent for tier 3, `document_review` for tier 1/2), `confirm_extraction()` (persists confirmed items as tasks/goals/entries, marks upload confirmed)
+- **Integrations:** `009_integrations.sql` — `integrations`, `sync_logs`, `inbox_items` tables with RLS
+- **DB migration:** `006_document_uploads.sql` — `document_uploads` table with 24h expiry index and RLS
+- **MCP client update:** `build_mcp_servers()` now attaches Google Workspace MCP (Calendar + Gmail read) and Gmail triage sidecar when `google` integration active; `get_user_integrations()` queries `provider` / `status` columns (matches new schema)
+- **Celery tasks:** `schedule_gcs_deletion` (sets custom-time on GCS blob for 24h lifecycle deletion), `inbox_triage` (every 4h — classifies unread Gmail items with Gemini Flash-Lite, ≤10 tokens)
+- **New deps:** `pymupdf>=1.24.0`, `python-docx>=1.1.0`, `google-cloud-storage>=2.18.0`
+- **Tests:** `test_documents.py` (10 tests) — 68/68 passing
+
+### Changed (Frontend)
+- **`AICoachChat.tsx`** — paperclip button now functional: file picker + drag-and-drop on chat area; file chips with processing state; `DocumentConfirmCard` renders extraction summary, domain tags, sensitivity tier label, toggleable action items, Confirm/Skip buttons; `documentsApi` wired throughout
+- **`lib/api.ts`** — `documentsApi` added: `upload`, `status`, `confirm`, `skip`, `list`
+
+---
+
+## [0.6.0] 2026-04-14 — Sprint 6: Kanban + Planner + Home Screen
+
+### Added (Backend)
+- **Tasks API:** `GET /kanban`, `POST/GET/PUT/DELETE /tasks/{id}`, `POST /tasks/{id}/move`, `POST /tasks/bulk` — statuses: `todo | in_progress | waiting | done | archived`
+- **Planner API:** `GET /planner`, `GET /planner/priority`, `GET /planner/agenda`, item CRUD + complete, `POST /planner/sync/google` stub
+- **Homescreen API:** `GET /homescreen` (cache-first, 6-hour TTL via `stale_after`), `POST /homescreen/refresh`, `POST /homescreen/items/{id}/complete`, `POST /homescreen/items/{id}/snooze`
+- **Prioritiser service:** `app/services/prioritiser.py` — `priority_score()` rule-based scoring: non-movable +50, overdue +60, due today +40, priority label weights, domain weights, goal linkage bonus. Zero LLM tokens
+- **`today_items()`, `week_items()`, `month_items()`, `year_items()`** — homescreen panel builders using priority scorer
+- **Celery tasks:** `regenerate_homescreen` (6 AM daily), `archive_done_tasks` (2 AM daily, archives `done` tasks >14 days old)
+- **DB migrations:** `002_tasks.sql`, `003_planner.sql`, `004_important_dates.sql`, `005_homescreen_cache.sql` (all with RLS)
+- **Tests:** `test_tasks.py` (7), `test_planner.py` (8 incl. prioritiser unit tests), `test_homescreen.py` (4) — 58/58 total passing
+
+### Added (Frontend)
+- **Kanban board:** `/kanban` — dnd-kit 4-column board (To Do / In Progress / Waiting / Done), optimistic drag updates, domain/priority filter bar, slide-panel edit. `dynamic(ssr:false)` wrapper
+- **Planner:** `/planner` — react-big-calendar with Week/Day/Month/Priority views, domain colour coding, quick-add on date click. `dynamic(ssr:false)` wrapper
+- **`KanbanCard.tsx`** — `useSortable` drag handle, domain badge, priority dot, due date
+- **`PlannerEvent.tsx`** — react-big-calendar event renderer with domain colour bar
+- **`lib/api.ts`** — `tasksApi`, `plannerApi`, `homescreenApi` added
+- **New deps:** `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`, `react-big-calendar`, `@types/react-big-calendar`
+
+### Changed (Frontend)
+- **Dashboard (`/`)** — rewritten as 4-tab home screen (TODAY / THIS WEEK / THIS MONTH / THIS YEAR). Today panel: fixed events (red), top tasks, habits due, coaching question. Week/Month/Year panels: tasks + goals with progress bars. All data from `GET /homescreen` via React Query
+
+---
+
 ## [0.4.0] 2026-04-14 — PRD 1.0 Complete
 
 ### Added

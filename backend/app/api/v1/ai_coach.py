@@ -7,11 +7,23 @@ from app.services.ai_service import ai_complete, LIFE_COACH_SYSTEM
 from app.memory.compressor import build_domain_context, build_full_context
 from app.memory.mem0_client import get_memories, store_memory
 from app.observability.logging import get_logger
+from app.agents.context import detect_domain
+from app.agents.supervisor import run_supervisor
 from datetime import datetime, timezone
 import uuid
+import json
 
 router = APIRouter(prefix="/ai", tags=["ai-coach"])
 log = get_logger()
+
+
+def _get_personalisation(user_id: str, sb) -> dict:
+    """Fetch user personalisation prefs; return defaults on any error."""
+    try:
+        result = sb.table("user_personalisation").select("*").eq("user_id", user_id).single().execute()
+        return result.data or {}
+    except Exception:
+        return {}
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -38,22 +50,36 @@ async def chat(payload: ChatRequest, user: User = Depends(get_current_user)):
         context = await build_full_context(user.id)
 
     memories = await get_memories(user.id, payload.message)
+    full_context = f"{context}\n\nMEMORIES:\n{memories}"
 
-    # Build prompt
-    system_with_context = f"{LIFE_COACH_SYSTEM}\n\nUSER CONTEXT:\n{context}\n\nMEMORIES:\n{memories}"
     messages.append({"role": "user", "content": payload.message, "timestamp": datetime.now(timezone.utc).isoformat()})
 
-    # AI call (max 2200 token budget)
-    ai_messages = [{"role": m["role"], "content": m["content"]} for m in messages[-6:]]  # last 6 turns only
-    response, model_used = await ai_complete("life_coaching", ai_messages, system=system_with_context, domain=domain or "general", max_tokens=800)
+    # Detect domain + fetch personalisation prefs
+    last_3 = [m["content"] for m in messages[-4:-1] if m.get("role") == "user"]
+    active_domain = domain or detect_domain(payload.message, last_3)
+    prefs = _get_personalisation(user.id, sb)
 
-    messages.append({"role": "assistant", "content": response, "timestamp": datetime.now(timezone.utc).isoformat()})
+    # Route through supervisor (multi-agent orchestration)
+    coach_response = await run_supervisor(
+        user_id=user.id,
+        message=payload.message,
+        domain=active_domain,
+        conv_history=messages[:-1],   # exclude the message we just appended
+        context=full_context,
+        prefs=prefs,
+    )
+
+    # Serialise CoachResponse as JSON string (backwards-compatible — frontend parses if JSON)
+    response_text = coach_response.model_dump_json()
+    model_used = coach_response.model_used or "claude-sonnet-4-6"
+
+    messages.append({"role": "assistant", "content": response_text, "timestamp": datetime.now(timezone.utc).isoformat()})
 
     # Save conversation
     conv_data = {
         "id": conv_id,
         "user_id": user.id,
-        "domain": domain,
+        "domain": active_domain,
         "title": payload.message[:60] if not payload.conversation_id else None,
         "messages": messages,
         "model_used": model_used,
@@ -63,10 +89,11 @@ async def chat(payload: ChatRequest, user: User = Depends(get_current_user)):
     sb.table("conversations").upsert(conv_data).execute()
 
     # Store insight in Mem0
-    await store_memory(user.id, f"User asked about {domain or 'life'}: {payload.message[:100]}. Key insight: {response[:200]}")
+    summary = coach_response.sections[0].content[:200] if coach_response.sections else ""
+    await store_memory(user.id, f"User asked about {active_domain}: {payload.message[:100]}. Key insight: {summary}")
 
-    log.info("ai_chat", user_id=user.id, domain=domain, model=model_used)
-    return ChatResponse(conversation_id=conv_id, message=response, model_used=model_used, domain=domain)
+    log.info("ai_chat", user_id=user.id, domain=active_domain, model=model_used)
+    return ChatResponse(conversation_id=conv_id, message=response_text, model_used=model_used, domain=active_domain)
 
 
 @router.get("/conversations", response_model=list[ConversationResponse])

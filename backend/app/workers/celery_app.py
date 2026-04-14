@@ -32,5 +32,21 @@ celery_app.conf.update(
             "task": "app.workers.tasks.recompute_domain_scores",
             "schedule": crontab(minute=30),  # every hour at :30
         },
+        "personalisation-calibration-weekly": {
+            "task": "app.workers.tasks.run_weekly_personalisation_calibration",
+            "schedule": crontab(hour=3, minute=0, day_of_week=1),  # Monday 3 AM UTC
+        },
+        "homescreen-daily-6am": {
+            "task": "app.workers.tasks.regenerate_homescreen",
+            "schedule": crontab(hour=6, minute=0),  # 6 AM daily
+        },
+        "archive-done-tasks-daily": {
+            "task": "app.workers.tasks.archive_done_tasks",
+            "schedule": crontab(hour=2, minute=0),  # 2 AM daily
+        },
+        "inbox-triage-every-4h": {
+            "task": "app.workers.tasks.inbox_triage",
+            "schedule": crontab(minute=0, hour="*/4"),  # every 4 hours
+        },
     },
 )

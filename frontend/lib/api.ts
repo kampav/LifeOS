@@ -78,3 +78,70 @@ export const usersApi = {
   update: (data: Record<string, unknown>) => api.put("/users/me", data),
   onboarding: (data: Record<string, unknown>) => api.post("/users/onboarding", data),
 };
+
+export const notificationsApi = {
+  list: () => api.get("/notifications"),
+  markRead: (id: string) => api.put(`/notifications/${id}/read`),
+  markAllRead: () => api.put("/notifications/read-all"),
+  delete: (id: string) => api.delete(`/notifications/${id}`),
+  getPreferences: () => api.get("/notifications/preferences"),
+  updatePreferences: (data: Record<string, unknown>) => api.post("/notifications/preferences", data),
+};
+
+export const personalisationApi = {
+  get: () => api.get("/users/me/personalisation"),
+  patch: (data: Record<string, unknown>) => api.patch("/users/me/personalisation", data),
+  reset: () => api.post("/users/me/personalisation/reset"),
+  learning: () => api.get("/users/me/personalisation/learning"),
+  undo: () => api.post("/users/me/personalisation/undo"),
+};
+
+export const mcpApi = {
+  tokens: () => api.get("/mcp/tokens"),
+  createToken: (data: { name: string; scopes?: string[] }) => api.post("/mcp/tokens", data),
+  deleteToken: (id: string) => api.delete(`/mcp/tokens/${id}`),
+  tools: () => api.get("/mcp/tools"),
+  serverConfig: () => api.get("/mcp/server-config"),
+};
+
+export const tasksApi = {
+  kanban: (params?: Record<string, string>) => api.get("/kanban", { params }),
+  create: (data: Record<string, unknown>) => api.post("/tasks", data),
+  get: (id: string) => api.get(`/tasks/${id}`),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/tasks/${id}`, data),
+  delete: (id: string) => api.delete(`/tasks/${id}`),
+  move: (id: string, status: string, position?: number) => api.post(`/tasks/${id}/move`, { status, position }),
+  bulk: (action: string, ids: string[], payload?: Record<string, unknown>) =>
+    api.post("/tasks/bulk", { action, ids, payload }),
+};
+
+export const plannerApi = {
+  list: (params?: Record<string, string>) => api.get("/planner", { params }),
+  priority: () => api.get("/planner/priority"),
+  agenda: (days?: number) => api.get(`/planner/agenda${days ? `?days=${days}` : ""}`),
+  createItem: (data: Record<string, unknown>) => api.post("/planner/items", data),
+  updateItem: (id: string, data: Record<string, unknown>) => api.put(`/planner/items/${id}`, data),
+  deleteItem: (id: string) => api.delete(`/planner/items/${id}`),
+  completeItem: (id: string) => api.post(`/planner/items/${id}/complete`),
+  syncGoogle: () => api.post("/planner/sync/google"),
+};
+
+export const homescreenApi = {
+  get: () => api.get("/homescreen"),
+  refresh: () => api.post("/homescreen/refresh"),
+  completeItem: (id: string) => api.post(`/homescreen/items/${id}/complete`),
+  snoozeItem: (id: string, hours?: number) => api.post(`/homescreen/items/${id}/snooze`, { hours }),
+};
+
+export const documentsApi = {
+  upload: (files: File[]) => {
+    const form = new FormData();
+    files.forEach(f => form.append("files", f));
+    return api.post("/coach/upload", form, { headers: { "Content-Type": "multipart/form-data" } });
+  },
+  status: (id: string) => api.get(`/coach/upload/${id}/status`),
+  confirm: (id: string, confirmedItems: { title: string; domain: string; item_type: string }[]) =>
+    api.post(`/coach/upload/${id}/confirm`, { confirmed_items: confirmedItems }),
+  skip: (id: string, reason?: string) => api.post(`/coach/upload/${id}/skip`, { reason }),
+  list: () => api.get("/coach/uploads"),
+};

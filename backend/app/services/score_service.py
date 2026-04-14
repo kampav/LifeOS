@@ -63,22 +63,31 @@ async def compute_domain_score(user_id: str, domain: str) -> int:
     return score
 
 
-async def compute_life_score(user_id: str) -> int:
-    """Weighted life score across all domains."""
+async def compute_life_score(user_id: str, weights: dict[str, int] | None = None) -> int:
+    """
+    Weighted life score across all domains.
+    weights: optional domain_weights from user_personalisation (1-10 scale).
+    Falls back to declared_priorities → BASE_WEIGHTS if not provided.
+    """
     sb = get_supabase()
-    profile = sb.table("profiles").select("declared_priorities,subscription_tier").eq("id", user_id).single().execute()
-    priorities = (profile.data or {}).get("declared_priorities", [])
 
-    weights = dict(BASE_WEIGHTS)
-    for domain in priorities[:3]:
-        if domain in weights:
-            weights[domain] *= 1.5
-
-    total = sum(weights.values())
-    weights = {k: v / total for k, v in weights.items()}
+    if weights:
+        # Convert 1-10 scale to proportional floats
+        raw = {d: weights.get(d, 5) for d in BASE_WEIGHTS}
+        total = sum(raw.values()) or 1
+        final_weights = {k: v / total for k, v in raw.items()}
+    else:
+        profile = sb.table("profiles").select("declared_priorities,subscription_tier").eq("id", user_id).single().execute()
+        priorities = (profile.data or {}).get("declared_priorities", [])
+        final_weights = dict(BASE_WEIGHTS)
+        for domain in priorities[:3]:
+            if domain in final_weights:
+                final_weights[domain] *= 1.5
+        total = sum(final_weights.values())
+        final_weights = {k: v / total for k, v in final_weights.items()}
 
     scores = {}
-    for domain in weights:
+    for domain in final_weights:
         scores[domain] = await compute_domain_score(user_id, domain)
 
-    return int(sum(weights[d] * scores[d] for d in weights))
+    return int(sum(final_weights[d] * scores[d] for d in final_weights))
