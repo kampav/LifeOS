@@ -48,5 +48,13 @@ celery_app.conf.update(
             "task": "app.workers.tasks.inbox_triage",
             "schedule": crontab(minute=0, hour="*/4"),  # every 4 hours
         },
+        "medication-reminder-daily": {
+            "task": "app.workers.tasks.send_medication_reminder",
+            "schedule": crontab(hour=8, minute=0),  # 8 AM daily
+        },
+        "data-retention-monthly": {
+            "task": "app.workers.tasks.run_data_retention_check",
+            "schedule": crontab(hour=3, minute=0, day_of_month=1),  # 1st of each month, 3 AM
+        },
     },
 )

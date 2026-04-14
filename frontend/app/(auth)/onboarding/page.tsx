@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { usersApi } from "@/lib/api";
+import { usersApi, privacyApi } from "@/lib/api";
 import { DOMAINS } from "@/lib/utils";
+import { CheckCircle, Shield } from "lucide-react";
 
-const STEPS = ["profile", "life-stage", "priorities", "first-goal", "done"] as const;
+const STEPS = ["profile", "life-stage", "priorities", "consent", "done"] as const;
 
 const LIFE_STAGES = [
   { id: "early_career", label: "Early Career", subtitle: "Building foundations, 20s-early 30s" },
@@ -13,17 +14,36 @@ const LIFE_STAGES = [
   { id: "transition", label: "Transition", subtitle: "Reinvention or pre-retirement" },
 ];
 
+const REQUIRED_CONSENTS = [
+  { type: "health_data", label: "Health Data Processing", desc: "Allows Life OS to store and analyse your health appointments, medications, and screenings. Processed locally — never sent to cloud AI." },
+  { type: "financial_data", label: "Financial Data Processing", desc: "Allows Life OS to store and analyse your transactions, budgets, and net worth. Processed locally — never sent to cloud AI." },
+  { type: "ai_processing", label: "AI Coaching", desc: "Allows your AI coach to provide personalised insights using your journal entries, goals, and life data. Only de-identified summaries are sent to AI models." },
+] as const;
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [data, setData] = useState({ name: "", age: "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, life_stage: "", priorities: [] as string[] });
+  const [consents, setConsents] = useState<Record<string, boolean>>({
+    health_data: false,
+    financial_data: false,
+    ai_processing: false,
+  });
   const [saving, setSaving] = useState(false);
 
   const currentStep = STEPS[step];
+  const allRequiredConsented = REQUIRED_CONSENTS.every(c => consents[c.type]);
 
   async function finish() {
     setSaving(true);
     try {
+      // Grant required consents
+      await Promise.all(
+        REQUIRED_CONSENTS
+          .filter(c => consents[c.type])
+          .map(c => privacyApi.grant(c.type))
+      );
+
       await usersApi.onboarding({
         name: data.name,
         age: parseInt(data.age) || undefined,
@@ -125,7 +145,49 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {currentStep === "first-goal" && (
+          {currentStep === "consent" && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <Shield className="w-6 h-6 text-indigo-500 flex-shrink-0" />
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Data & Privacy</h2>
+                  <p className="text-gray-500 text-sm mt-0.5">Life OS needs your consent to process certain types of data.</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {REQUIRED_CONSENTS.map(c => (
+                  <button
+                    key={c.type}
+                    onClick={() => setConsents(prev => ({ ...prev, [c.type]: !prev[c.type] }))}
+                    className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 ${consents[c.type] ? "border-indigo-500 bg-indigo-50" : "border-gray-200 hover:border-gray-300"}`}
+                  >
+                    <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${consents[c.type] ? "bg-indigo-500 border-indigo-500" : "border-gray-300"}`}>
+                      {consents[c.type] && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm text-gray-900">{c.label} <span className="text-xs text-red-500 font-normal">Required</span></p>
+                      <p className="text-xs text-gray-500 mt-0.5">{c.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <p className="text-xs text-gray-400">
+                By continuing you agree to our Terms of Service and Privacy Policy. You can withdraw optional consents at any time in Settings → Privacy. Required consents are necessary for core functionality.
+              </p>
+
+              <div className="flex gap-3">
+                <button onClick={() => setStep(s => s - 1)} className="flex-1 border border-gray-200 rounded-xl py-3 text-sm">Back</button>
+                <button onClick={() => setStep(s => s + 1)} disabled={!allRequiredConsented}
+                  className="flex-1 bg-primary text-white rounded-xl py-3 font-medium disabled:opacity-50">
+                  {allRequiredConsented ? "Continue" : `${REQUIRED_CONSENTS.filter(c => !consents[c.type]).length} consent(s) required`}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {currentStep === "done" && (
             <div className="space-y-6 text-center">
               <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto">
                 <span className="text-3xl">🎯</span>

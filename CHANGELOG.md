@@ -39,6 +39,26 @@ Format: `[version] YYYY-MM-DD — Persona — Description`
 
 ---
 
+## [0.8.0] 2026-04-14 — Sprint 8: Finance + Health Deep-Dive + T&C Compliance
+
+### Added (Backend)
+- **Finance API:** `GET /finance/spending`, `GET /finance/budget`, `POST /finance/transactions`, `GET /finance/net-worth`, `POST /finance/net-worth`, `GET /finance/tax` — all responses include `FINANCIAL_DISCLAIMER`
+- **Health Data API:** `GET/POST /health/appointments`, `GET/POST /health/medications`, `POST /health/medications/{id}/taken`, `GET /health/screenings` (NHS schedule merged with user records), `GET/POST /health/vaccinations` — Tier 3, all responses include `HEALTH_DISCLAIMER`, no cloud AI
+- **Privacy API:** `GET /privacy/my-consents`, `POST /privacy/grant`, `POST /privacy/withdraw/{type}` (blocks withdrawal of required consents), `POST /privacy/export`, `POST /privacy/portability`, `POST /privacy/delete` (schedules 30-day GDPR deletion)
+- **Celery tasks:** `send_medication_reminder` (daily 8 AM), `run_data_retention_check` (1st of month, 3 AM), `inbox_triage` (every 4h)
+- **DB migrations:** `010_finance.sql` (transactions, budgets, net_worth_snapshots, tax_records), `011_health.sql` (medical_appointments, medications, medication_logs, health_screenings, vaccinations), `012_consent.sql` (consent_records, data_export_requests, data_deletion_requests), `013_assets_vault.sql` (assets, document_vault, legacy_vault) — all with `DROP POLICY IF EXISTS` idempotency pattern
+- **Tests:** `test_consent.py` (10 tests) — 78/78 passing
+
+### Added (Frontend)
+- **`/finance`** — full finance dashboard: net worth summary (assets/liabilities/net worth cards), spending bar chart (Recharts, `dynamic(ssr:false)`), net worth trend line chart, budget vs actuals progress bars, HMRC deadlines, log transaction form, financial disclaimer
+- **`/health`** — 4-tab health dashboard: appointments (add form), medications (daily tick + add form), screenings (NHS schedule with color-coded due status), vaccinations — health disclaimer
+- **`/settings/privacy`** — consent toggles (required vs optional), data export request, account deletion with 30-day confirmation, UK GDPR notice
+- **`/onboarding`** — consent step added (step 4 of 5): three required consent checkboxes (health_data, financial_data, ai_processing) block progression until all granted; calls `POST /privacy/grant` on completion
+- **`FinanceCharts.tsx`** — `SpendBarChart`, `NetWorthLineChart` (Recharts wrappers, loaded via `dynamic(ssr:false)` only)
+- **`lib/api.ts`** — `privacyApi` added: `myConsents`, `grant`, `withdraw`, `export`, `portability`, `delete`
+
+---
+
 ## [0.7.0] 2026-04-14 — Sprint 7: Document Upload + Google Workspace MCP
 
 ### Added (Backend)

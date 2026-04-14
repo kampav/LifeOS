@@ -221,9 +221,25 @@ def test_upload_unsupported_type_returns_415(doc_client):
     assert r.status_code == 415
 
 
-def test_list_uploads_returns_empty(doc_client, mock_supabase):
+def test_list_uploads_returns_empty():
     """GET /coach/uploads returns empty list when no uploads."""
-    mock_supabase.table.return_value.execute.return_value = MagicMock(data=[])
-    r = doc_client.get("/api/v1/coach/uploads")
-    assert r.status_code == 200
-    assert r.json()["uploads"] == []
+    from app.main import app
+    from app.db.client import get_supabase
+
+    sb = MagicMock()
+    chain = MagicMock()
+    sb.table.return_value = chain
+    chain.select.return_value = chain
+    chain.eq.return_value = chain
+    chain.order.return_value = chain
+    chain.limit.return_value = chain
+    chain.execute.return_value = MagicMock(data=[])
+
+    app.dependency_overrides[get_current_user] = lambda: TEST_USER
+    app.dependency_overrides[get_supabase] = lambda: sb
+    try:
+        r = TestClient(app).get("/api/v1/coach/uploads")
+        assert r.status_code == 200
+        assert r.json()["uploads"] == []
+    finally:
+        app.dependency_overrides.clear()

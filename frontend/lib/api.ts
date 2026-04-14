@@ -133,6 +133,15 @@ export const homescreenApi = {
   snoozeItem: (id: string, hours?: number) => api.post(`/homescreen/items/${id}/snooze`, { hours }),
 };
 
+export const privacyApi = {
+  myConsents: () => api.get("/privacy/my-consents"),
+  grant: (consentType: string) => api.post("/privacy/grant", { consent_type: consentType }),
+  withdraw: (consentType: string) => api.post(`/privacy/withdraw/${consentType}`),
+  export: () => api.post("/privacy/export"),
+  portability: () => api.post("/privacy/portability"),
+  delete: () => api.post("/privacy/delete", { confirm: true }),
+};
+
 export const documentsApi = {
   upload: (files: File[]) => {
     const form = new FormData();

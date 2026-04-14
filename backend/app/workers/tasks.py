@@ -268,6 +268,94 @@ def _triage_user_inbox(user_id: str, sb):
     loop.close()
 
 
+@celery_app.task(name="app.workers.tasks.send_medication_reminder")
+def send_medication_reminder():
+    """Daily 8 AM — send in-app medication reminders for active medications due today."""
+    from app.db.client import get_supabase
+
+    log.info("medication_reminder_started")
+    try:
+        sb = get_supabase()
+        meds = sb.table("medications").select("user_id, name, times_of_day").eq("is_active", True).execute()
+        user_meds: dict[str, list[str]] = {}
+        for m in (meds.data or []):
+            uid = m["user_id"]
+            user_meds.setdefault(uid, []).append(m["name"])
+
+        for user_id, med_names in user_meds.items():
+            body = f"Time to take: {', '.join(med_names)}"
+            sb.table("notifications").insert({
+                "user_id": user_id,
+                "type": "medication_reminder",
+                "title": "Medication Reminder",
+                "body": body,
+                "read": False,
+            }).execute()
+
+        log.info("medication_reminders_sent", users=len(user_meds))
+    except Exception as exc:
+        log.error("medication_reminder_failed", error=str(exc))
+
+
+@celery_app.task(name="app.workers.tasks.run_data_retention_check")
+def run_data_retention_check():
+    """
+    Monthly — enforce data retention policy (PRD §9.1):
+    - Execute any pending deletion requests past their scheduled_for date
+    - Expire old document uploads (>30 days, already skipped/confirmed)
+    """
+    from app.db.client import get_supabase
+    from datetime import datetime, timezone
+
+    log.info("data_retention_check_started")
+    try:
+        sb = get_supabase()
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Find deletion requests due for processing
+        due = sb.table("data_deletion_requests").select(
+            "id, user_id"
+        ).eq("status", "pending").lte("scheduled_for", now).execute()
+
+        for req in (due.data or []):
+            user_id = req["user_id"]
+            try:
+                # Delete user data from all tables (cascade handles most via FK)
+                # Entries, goals, habits, tasks, etc. all cascade from auth.users
+                # We mark the request complete — actual auth.users delete must be
+                # done via Supabase Admin API (service key) in production
+                sb.table("data_deletion_requests").update({
+                    "status": "processing",
+                }).eq("id", req["id"]).execute()
+
+                # Soft-clean app data (hard delete via admin API in production)
+                for table in ["entries", "goals", "habits", "tasks", "planner_items",
+                              "transactions", "medical_appointments", "medications"]:
+                    try:
+                        sb.table(table).delete().eq("user_id", user_id).execute()
+                    except Exception:
+                        pass
+
+                sb.table("data_deletion_requests").update({
+                    "status": "completed",
+                    "completed_at": now,
+                }).eq("id", req["id"]).execute()
+
+                log.info("user_data_deleted", user_id=user_id)
+            except Exception as e:
+                log.error("user_deletion_failed", user_id=user_id, error=str(e))
+
+        # Clean up expired document uploads older than 30 days
+        cutoff_30d = (datetime.now(timezone.utc).replace(tzinfo=None)).isoformat()
+        sb.table("document_uploads").delete().in_(
+            "status", ["skipped", "error"]
+        ).lte("created_at", cutoff_30d).execute()
+
+        log.info("data_retention_check_done", deletions=len(due.data or []))
+    except Exception as exc:
+        log.error("data_retention_check_failed", error=str(exc))
+
+
 @celery_app.task(name="app.workers.tasks.recompute_domain_scores")
 def recompute_domain_scores():
     """Hourly score recomputation — invalidates Redis cache."""

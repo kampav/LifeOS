@@ -63,7 +63,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # ── Routers ─────────────────────────────────────────────────────────────────
-from app.api.v1 import users, entries, goals, habits, domains, social, notifications, ai_coach, personalisation, mcp, tasks, planner, homescreen, documents
+from app.api.v1 import users, entries, goals, habits, domains, social, notifications, ai_coach, personalisation, mcp, tasks, planner, homescreen, documents, finance, health_data, privacy
 
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(entries.router, prefix="/api/v1")
@@ -79,6 +79,9 @@ app.include_router(tasks.router, prefix="/api/v1")
 app.include_router(planner.router, prefix="/api/v1")
 app.include_router(homescreen.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1")
+app.include_router(finance.router, prefix="/api/v1")
+app.include_router(health_data.router, prefix="/api/v1")
+app.include_router(privacy.router, prefix="/api/v1")
 
 
 # ── Convenience aliases ──────────────────────────────────────────────────────
