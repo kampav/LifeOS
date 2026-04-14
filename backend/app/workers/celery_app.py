@@ -24,6 +24,10 @@ celery_app.conf.update(
             "task": "app.workers.tasks.generate_weekly_reviews",
             "schedule": crontab(hour=18, minute=0, day_of_week=0),
         },
+        "evening-reflection-daily": {
+            "task": "app.workers.tasks.send_evening_reflections",
+            "schedule": crontab(hour=21, minute=0),  # 9 PM daily
+        },
         "recompute-scores-hourly": {
             "task": "app.workers.tasks.recompute_domain_scores",
             "schedule": crontab(minute=30),  # every hour at :30

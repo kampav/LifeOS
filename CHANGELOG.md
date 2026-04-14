@@ -5,6 +5,20 @@ Format: `[version] YYYY-MM-DD — Persona — Description`
 
 ---
 
+## [0.4.0] 2026-04-14 — PRD 1.0 Complete
+
+### Added
+- **Pipeline fix:** Removed `JWT_SECRET` from Cloud Run `--set-secrets` (secret doesn't exist in GCP; Supabase handles JWT internally — was breaking every prod deploy)
+- **Notifications:** `GET/POST /notifications/preferences` — user notification preference storage in profile JSONB
+- **Celery:** Evening reflection task at 9 PM daily (PRD §3.3) — creates in-app notification for all active users
+- **Audit log:** `002_audit_log.sql` migration — immutable write audit table with RLS, delete/update rules, indexes (PRD §6.4 Critical Non-Negotiable)
+- **Audit middleware:** `app/security/audit.py` — fire-and-forget async write audit for all POST/PUT/DELETE operations
+- **PWA icons:** `icon-192.png` + `icon-512.png` generated — manifest.json references were broken (install would fail on mobile)
+- **E2E tests:** `frontend/e2e/critical-paths.spec.ts` — 10 Playwright critical path tests (login, auth redirect, health entry, goal, habit, AI chat, daily brief, notifications, domain score, settings)
+- **Playwright config:** `playwright.config.ts` — chromium + mobile Safari, staging URL via env var, non-blocking in CI until E2E secrets configured
+
+---
+
 ## [0.3.2] 2026-04-13 — Sprint 3 Complete
 
 ### Added (Full-Stack)

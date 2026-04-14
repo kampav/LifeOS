@@ -98,7 +98,7 @@ jobs:
           gcloud run deploy life-os-api-staging \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/api:${{ github.sha }} \
             --region ${{ env.REGION }} --platform managed \
-            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,SUPABASE_ANON_KEY=supabase-anon-key:latest,JWT_SECRET=jwt-secret:latest,REDIS_URL=redis-url:latest" \
+            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,SUPABASE_ANON_KEY=supabase-anon-key:latest,REDIS_URL=redis-url:latest" \
             --set-env-vars="ENVIRONMENT=staging,DEBUG=false" \
             --allow-unauthenticated --min-instances=0 --max-instances=5
       - name: Deploy Frontend to staging
@@ -107,6 +107,20 @@ jobs:
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/frontend:${{ github.sha }} \
             --region ${{ env.REGION }} --platform managed \
             --allow-unauthenticated --min-instances=0 --max-instances=3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Playwright + deps
+        run: cd frontend && npm ci && npx playwright install --with-deps chromium
+      - name: Run E2E tests against staging
+        run: cd frontend && npm run test:e2e || true   # non-blocking until E2E secrets are configured
+        env:
+          PLAYWRIGHT_BASE_URL: https://life-os-frontend-staging-574662870196.europe-west2.run.app
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
   deploy-production:
     needs: build-and-push
@@ -129,7 +143,7 @@ jobs:
           gcloud run deploy life-os-api \
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/life-os/api:${{ github.sha }} \
             --region ${{ env.REGION }} --platform managed \
-            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,SUPABASE_ANON_KEY=supabase-anon-key:latest,JWT_SECRET=jwt-secret:latest,REDIS_URL=redis-url:latest" \
+            --set-secrets="ANTHROPIC_API_KEY=anthropic-api-key:latest,GOOGLE_AI_API_KEY=google-ai-api-key:latest,SUPABASE_URL=supabase-url:latest,SUPABASE_SERVICE_KEY=supabase-service-key:latest,SUPABASE_ANON_KEY=supabase-anon-key:latest,REDIS_URL=redis-url:latest" \
             --set-env-vars="ENVIRONMENT=production,DEBUG=false" \
             $TRAFFIC_FLAG --allow-unauthenticated \
             --min-instances=1 --max-instances=20 --cpu=2 --memory=2Gi

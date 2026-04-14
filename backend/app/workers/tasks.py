@@ -51,6 +51,29 @@ def generate_weekly_reviews(self):
         raise self.retry(exc=exc, countdown=600)
 
 
+@celery_app.task(name="app.workers.tasks.send_evening_reflections", bind=True, max_retries=3)
+def send_evening_reflections(self):
+    """Send 9 PM evening reflection prompt to all active users."""
+    from app.db.client import get_supabase
+
+    log.info("evening_reflection_task_started")
+    try:
+        sb = get_supabase()
+        users = sb.table("profiles").select("id").eq("onboarding_completed", True).execute()
+        for user in (users.data or []):
+            sb.table("notifications").insert({
+                "user_id": user["id"],
+                "type": "evening_reflection",
+                "title": "Evening Reflection",
+                "body": "How was your day? Rate it, log 3 wins, and prep for tomorrow.",
+                "read": False,
+            }).execute()
+        log.info("evening_reflections_sent", count=len(users.data or []))
+    except Exception as exc:
+        log.error("evening_reflection_task_failed", error=str(exc))
+        raise self.retry(exc=exc, countdown=300)
+
+
 @celery_app.task(name="app.workers.tasks.recompute_domain_scores")
 def recompute_domain_scores():
     """Hourly score recomputation — invalidates Redis cache."""
