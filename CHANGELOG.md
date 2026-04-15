@@ -39,6 +39,22 @@ Format: `[version] YYYY-MM-DD — Persona — Description`
 
 ---
 
+## [0.9.0] 2026-04-15 — Sprint 9: Assets, Vault & Domain Deep-Dives
+
+### Added (Backend)
+- **Assets API:** `GET /assets` (list with totals), `GET /assets/summary` (equity breakdown by type), `POST /assets`, `GET/PUT/DELETE /assets/{id}` — 9 asset types, net equity calculated server-side
+- **Vault API:** Document vault (`GET/POST /vault/documents`, `DELETE /vault/documents/{id}`) — expiry tracking with 90-day warning flag; Legacy vault (`GET/POST/PUT/DELETE /vault/legacy`, `GET /vault/legacy/{id}`) — `is_encrypted=True` enforced server-side, 5 release conditions
+- **Tests:** `test_assets.py` (11 tests) — 89/89 passing
+
+### Added (Frontend)
+- **`/property`** — full property & assets page: equity summary cards (total/liabilities/net equity), expandable assets list with type colour dots, goals progress bars, document vault with expiry warnings and inline add form
+- **`/growth`** — deep-dive growth page: habit streaks + daily tick, active goals with progress bars, recent learning/reflection entries, quick log form (7 entry types)
+- **`/career`** — deep-dive career page: achievement/skill/milestone log, active goals with progress, career entry log with colour-coded type badges
+- **`/social`** — deep-dive social CRM: contact list with filter by relationship, due check-ins panel (overdue highlighted in amber), quick log interaction inline, stats (contacts / due / up-to-date)
+- **`lib/api.ts`** — `assetsApi` (list, summary, CRUD), `vaultApi` (documents + legacy CRUD)
+
+---
+
 ## [0.8.0] 2026-04-14 — Sprint 8: Finance + Health Deep-Dive + T&C Compliance
 
 ### Added (Backend)

@@ -133,6 +133,26 @@ export const homescreenApi = {
   snoozeItem: (id: string, hours?: number) => api.post(`/homescreen/items/${id}/snooze`, { hours }),
 };
 
+export const assetsApi = {
+  list: () => api.get("/assets"),
+  summary: () => api.get("/assets/summary"),
+  create: (data: Record<string, unknown>) => api.post("/assets", data),
+  get: (id: string) => api.get(`/assets/${id}`),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/assets/${id}`, data),
+  delete: (id: string) => api.delete(`/assets/${id}`),
+};
+
+export const vaultApi = {
+  listDocuments: () => api.get("/vault/documents"),
+  createDocument: (data: Record<string, unknown>) => api.post("/vault/documents", data),
+  deleteDocument: (id: string) => api.delete(`/vault/documents/${id}`),
+  listLegacy: () => api.get("/vault/legacy"),
+  getLegacy: (id: string) => api.get(`/vault/legacy/${id}`),
+  createLegacy: (data: Record<string, unknown>) => api.post("/vault/legacy", data),
+  updateLegacy: (id: string, data: Record<string, unknown>) => api.put(`/vault/legacy/${id}`, data),
+  deleteLegacy: (id: string) => api.delete(`/vault/legacy/${id}`),
+};
+
 export const privacyApi = {
   myConsents: () => api.get("/privacy/my-consents"),
   grant: (consentType: string) => api.post("/privacy/grant", { consent_type: consentType }),
