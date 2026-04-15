@@ -39,6 +39,21 @@ Format: `[version] YYYY-MM-DD — Persona — Description`
 
 ---
 
+## [1.0.0] 2026-04-14 — Sprint 10: Important Dates API & Final Domain Deep-Dives
+
+### Added (Backend)
+- **Important Dates API:** `GET/POST /important-dates`, `GET /important-dates/upcoming?days=N&domain=`, `PUT/DELETE /important-dates/{id}` — recurring-aware `next_occurrence()` helper (handles Feb 29 edge case), `days_until` computed field, results sorted by proximity
+- **Tests:** `test_important_dates.py` (13 tests) — 102/102 passing
+
+### Added (Frontend)
+- **`/family`** — deep-dive family page: upcoming dates panel (next 90 days with `days_until` badges, red if ≤7d), all family dates list with Cake/Heart/Star/Calendar icons, add date form (recurring toggle), family log (event/memory/milestone/concern/gratitude)
+- **`/education`** — deep-dive education page: books/courses/certificates stats, learning goals with progress bars, full learning log with type icons (BookOpen/GraduationCap/CheckCircle2), log form for 8 entry types
+- **`/holiday`** — deep-dive holiday & travel page: trip planning via `importantDatesApi` (upcoming trips for next 365 days), bucket list entries, travel memories log, goals section
+- **`/community`** — deep-dive community page: volunteer hours (sum of volunteering entry values), events count, causes/advocacy count, active goals; activity log with type colour dots, conditional hours input for volunteering entries
+- **`lib/api.ts`** — `importantDatesApi` (list, upcoming, create, update, delete)
+
+---
+
 ## [0.9.0] 2026-04-15 — Sprint 9: Assets, Vault & Domain Deep-Dives
 
 ### Added (Backend)

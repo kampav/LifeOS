@@ -133,6 +133,14 @@ export const homescreenApi = {
   snoozeItem: (id: string, hours?: number) => api.post(`/homescreen/items/${id}/snooze`, { hours }),
 };
 
+export const importantDatesApi = {
+  list: (params?: { domain?: string; category?: string }) => api.get("/important-dates", { params }),
+  upcoming: (days?: number, domain?: string) => api.get("/important-dates/upcoming", { params: { days, domain } }),
+  create: (data: Record<string, unknown>) => api.post("/important-dates", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/important-dates/${id}`, data),
+  delete: (id: string) => api.delete(`/important-dates/${id}`),
+};
+
 export const assetsApi = {
   list: () => api.get("/assets"),
   summary: () => api.get("/assets/summary"),
