@@ -19,11 +19,12 @@ export function DomainCard({ domainId, score, entryCount = 0, trend = "flat" }: 
 
   return (
     <Link href={`/${domainId}`}>
-      <div className="group panel rounded-2xl p-4 cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-card-hover">
+      <div className="group panel glass-shine rounded-[1.6rem] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-card-hover">
+        <div className="absolute inset-x-4 top-0 h-1 rounded-full opacity-70 transition group-hover:opacity-100" style={{ background: `linear-gradient(90deg, ${domain.color}, rgba(255,255,255,0.3))` }} />
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-2xl flex items-center justify-center ring-1 ring-white/70" style={{ background: domain.color + "18" }}>
+            <span className="w-9 h-9 rounded-2xl flex items-center justify-center ring-1 ring-white/80 shadow-inner" style={{ background: domain.color + "24" }}>
               <span className="w-3 h-3 rounded-full shadow-sm" style={{ background: domain.color }} />
             </span>
             <span className="font-bold text-slate-900 text-sm">{domain.label}</span>
@@ -39,8 +40,8 @@ export function DomainCard({ domainId, score, entryCount = 0, trend = "flat" }: 
               {scoreLabel}
             </span>
           </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, background: domain.color }} />
+          <div className="h-2 bg-white/55 rounded-full overflow-hidden shadow-inner">
+            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, background: `linear-gradient(90deg, ${domain.color}, ${domain.color}99)` }} />
           </div>
         </div>
 

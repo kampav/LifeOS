@@ -16,11 +16,11 @@ export function BottomNav() {
   const pathname = usePathname();
   return (
     <nav className="md:hidden fixed bottom-3 left-3 right-3 z-50">
-      <div className="panel flex rounded-2xl px-1 py-1">
+      <div className="panel flex rounded-[1.5rem] px-1 py-1">
         {NAV.map(({ href, icon: Icon, label }) => (
           <Link key={href} href={href}
             className={cn("flex-1 flex flex-col items-center gap-1 rounded-xl py-2.5 text-[11px] font-semibold transition-all",
-              pathname === href ? "bg-slate-950 text-white" : "text-slate-500")}>
+              pathname === href ? "bg-[linear-gradient(135deg,#0F172A,#2563EB)] text-white shadow-lg shadow-blue-950/20" : "text-slate-500")}>
             <Icon className="w-4 h-4" />
             <span>{label}</span>
           </Link>

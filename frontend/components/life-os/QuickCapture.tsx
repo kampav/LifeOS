@@ -49,7 +49,7 @@ export function QuickCapture() {
       {/* FAB */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-24 md:bottom-8 right-6 w-14 h-14 bg-primary rounded-2xl shadow-xl flex items-center justify-center hover:bg-primary/90 transition-all hover:scale-105 z-40"
+        className="fixed bottom-24 md:bottom-8 right-6 w-14 h-14 bg-[linear-gradient(135deg,#2563EB,#14B8A6,#EC4899)] rounded-2xl shadow-2xl shadow-blue-500/25 flex items-center justify-center hover:scale-105 transition-all z-40 glass-shine"
       >
         <Plus className="w-6 h-6 text-white" />
       </button>

@@ -339,15 +339,16 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-4 md:px-8 md:py-2">
-      <section className="panel-dark relative mb-6 overflow-hidden rounded-[2rem] p-5 text-white md:p-7">
-        <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-cyan-300/10 blur-3xl" />
+      <section className="panel-dark glass-shine relative mb-6 overflow-hidden rounded-[2.25rem] p-5 text-white md:p-8">
+        <div className="absolute inset-x-6 top-0 h-1 rounded-full colour-rail opacity-90" />
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.16),transparent_38%,rgba(255,255,255,0.08)_70%,transparent)]" />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.08] px-3 py-1 text-xs font-bold text-cyan-100">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.16] px-3 py-1 text-xs font-bold text-cyan-50 backdrop-blur-xl">
               <Clock3 className="h-3.5 w-3.5" />
               <span suppressHydrationWarning>{dateLabel || "Today"}</span>
             </div>
-            <h1 suppressHydrationWarning className="mt-4 max-w-2xl text-3xl font-black tracking-tight md:text-5xl">
+            <h1 suppressHydrationWarning className="mt-4 max-w-3xl text-3xl font-black tracking-tight md:text-6xl">
               {greeting}, {firstName}. Build one return loop today.
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
@@ -355,22 +356,22 @@ export default function DashboardPage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               {["Trigger", "Action", "Reward", "Investment"].map((step, index) => (
-                <span key={step} className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1 text-xs font-bold text-slate-200">
+                <span key={step} className="rounded-full border border-white/15 bg-white/[0.13] px-3 py-1 text-xs font-bold text-slate-100 shadow-sm backdrop-blur-xl">
                   {index + 1}. {step}
                 </span>
               ))}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[26rem]">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4">
+            <div className="soft-float rounded-3xl border border-white/15 bg-white/[0.14] p-4 shadow-2xl shadow-blue-950/10 backdrop-blur-2xl">
               <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Life Score</div>
               <div className="mt-1 text-3xl font-black">{lifeScore}</div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4">
+            <div className="soft-float rounded-3xl border border-white/15 bg-white/[0.14] p-4 shadow-2xl shadow-blue-950/10 backdrop-blur-2xl [animation-delay:900ms]">
               <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Tasks</div>
               <div className="mt-1 text-3xl font-black">{totalTasks}</div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4">
+            <div className="soft-float rounded-3xl border border-white/15 bg-white/[0.14] p-4 shadow-2xl shadow-blue-950/10 backdrop-blur-2xl [animation-delay:1800ms]">
               <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Focus</div>
               <div className="mt-1 truncate text-lg font-black capitalize">{topDomain?.[0] || "Start"}</div>
             </div>
@@ -379,13 +380,14 @@ export default function DashboardPage() {
       </section>
 
       <section className="mb-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="panel rounded-3xl p-5">
+        <div className="panel glass-shine float-in rounded-[2rem] p-5">
+          <div className="absolute inset-x-5 top-0 h-1 rounded-full colour-rail" />
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <p className="metric-label">Next Best Action</p>
               <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">{nextAction.label}</h2>
             </div>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-700">
+            <span className="rounded-full border border-emerald-200/80 bg-emerald-50/80 px-3 py-1 text-[11px] font-black text-emerald-700 backdrop-blur-xl">
               Guided
             </span>
           </div>
@@ -394,7 +396,7 @@ export default function DashboardPage() {
             {nextAction.kind === "task" ? (
               <button
                 onClick={() => completeMutation.mutate(nextAction.taskId)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-800"
               >
                 <CheckCircle className="h-4 w-4" />
                 {nextAction.cta}
@@ -402,7 +404,7 @@ export default function DashboardPage() {
             ) : nextAction.kind === "link" ? (
               <Link
                 href={nextAction.href}
-                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-800"
               >
                 <ArrowUpRight className="h-4 w-4" />
                 {nextAction.cta}
@@ -410,7 +412,7 @@ export default function DashboardPage() {
             ) : (
               <button
                 onClick={openQuickCapture}
-                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-800"
               >
                 <Zap className="h-4 w-4" />
                 {nextAction.cta}
@@ -418,7 +420,7 @@ export default function DashboardPage() {
             )}
             <button
               onClick={() => setShowChat(true)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:border-slate-300"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/70 bg-white/45 px-4 py-3 text-sm font-black text-slate-700 shadow-sm backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-white"
             >
               <Brain className="h-4 w-4" />
               Ask coach why
@@ -426,7 +428,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="panel rounded-3xl p-5">
+        <div className="panel float-in rounded-[2rem] p-5 [animation-delay:100ms]">
           <div className="flex items-center justify-between">
             <div>
               <p className="metric-label">Variable Reward</p>
@@ -434,7 +436,7 @@ export default function DashboardPage() {
             </div>
             <Gift className="h-5 w-5 text-primary" />
           </div>
-          <div className={`mt-4 rounded-2xl border p-4 transition ${insightRevealed ? "border-blue-100 bg-blue-50" : "border-slate-200 bg-slate-50"}`}>
+          <div className={`mt-4 rounded-3xl border p-4 shadow-inner transition ${insightRevealed ? "border-blue-100/80 bg-blue-50/75" : "border-white/70 bg-white/40"}`}>
             {insightRevealed ? (
               <>
                 <h3 className="font-black text-slate-950">{reward.title}</h3>
@@ -452,7 +454,7 @@ export default function DashboardPage() {
           <button
             onClick={revealInsight}
             disabled={insightRevealed}
-            className="mt-4 w-full rounded-2xl bg-primary px-4 py-3 text-sm font-black text-white transition hover:bg-primary-dark disabled:bg-slate-200 disabled:text-slate-500"
+            className="mt-4 w-full rounded-2xl bg-primary px-4 py-3 text-sm font-black text-white shadow-lg shadow-blue-500/25 transition hover:-translate-y-0.5 hover:bg-primary-dark disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
           >
             {insightRevealed ? "Unlocked for today" : "Reveal today's insight"}
           </button>
@@ -460,7 +462,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="mb-6 grid gap-4 lg:grid-cols-3">
-        <div className="panel rounded-3xl p-5">
+        <div className="panel float-in rounded-[2rem] p-5 [animation-delay:150ms]">
           <div className="flex items-center gap-2">
             <Flame className="h-4 w-4 text-orange-500" />
             <p className="metric-label">Momentum</p>
@@ -469,7 +471,7 @@ export default function DashboardPage() {
             <span className="text-5xl font-black tracking-tight text-slate-950">{momentumScore}</span>
             <span className="pb-2 text-sm font-bold text-slate-400">readiness</span>
           </div>
-          <div className="mt-4 h-2 rounded-full bg-slate-100">
+          <div className="mt-4 h-2 rounded-full bg-white/60 shadow-inner">
             <div className="h-2 rounded-full bg-orange-500 transition-all" style={{ width: `${momentumScore}%` }} />
           </div>
           <p className="mt-3 text-sm leading-6 text-slate-600">
@@ -477,7 +479,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="panel rounded-3xl p-5">
+        <div className="panel float-in rounded-[2rem] p-5 [animation-delay:250ms]">
           <div className="flex items-center gap-2">
             <Compass className="h-4 w-4 text-cyan-600" />
             <p className="metric-label">Hunt</p>
@@ -496,7 +498,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="panel rounded-3xl p-5">
+        <div className="panel float-in rounded-[2rem] p-5 [animation-delay:350ms]">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4 text-violet-600" />
             <p className="metric-label">Investment</p>
@@ -508,7 +510,7 @@ export default function DashboardPage() {
           <button
             onClick={applySuggestedTuning}
             disabled={tuneMutation.isPending || !learning?.suggested_domain_weights}
-            className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800 disabled:opacity-50"
+            className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:opacity-50"
           >
             <Gauge className="h-4 w-4" />
             Apply adaptive tuning
@@ -517,7 +519,7 @@ export default function DashboardPage() {
       </section>
 
       {brief?.brief && (
-        <section className="panel mb-6 rounded-3xl p-5">
+        <section className="panel mb-6 rounded-[2rem] p-5">
           <div className="mb-2 flex items-center gap-2">
             <Brain className="h-4 w-4 text-primary" />
             <span className="metric-label">Contextual Trigger</span>
@@ -531,12 +533,12 @@ export default function DashboardPage() {
       )}
 
       <section className="mb-6 grid gap-6 md:grid-cols-3">
-        <div className="panel flex flex-col items-center justify-center rounded-3xl p-6">
+        <div className="panel glass-shine flex flex-col items-center justify-center rounded-[2rem] p-6">
           <p className="metric-label mb-3">Life Score</p>
           <LifeScore score={lifeScore} size="lg" />
           <button
             onClick={() => setShowChat(s => !s)}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
+            className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-800"
           >
             <Sparkles className="h-4 w-4" />
             AI Coach
@@ -547,14 +549,14 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="panel mb-6 overflow-hidden rounded-3xl">
+      <section className="panel mb-6 overflow-hidden rounded-[2rem]">
         <div className="flex border-b border-slate-100 px-3 sm:px-4">
           {TABS.map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`-mb-px border-b-2 px-3 py-4 text-[11px] font-black tracking-wide transition sm:px-4 ${
-                tab === t ? "border-slate-950 text-slate-950" : "border-transparent text-slate-400 hover:text-slate-700"
+                className={`-mb-px border-b-2 px-3 py-4 text-[11px] font-black tracking-wide transition sm:px-4 ${
+                tab === t ? "border-transparent bg-clip-text text-transparent [background-image:linear-gradient(90deg,#2563EB,#14B8A6,#EC4899)]" : "border-transparent text-slate-400 hover:text-slate-700"
               }`}
             >
               {t}
@@ -673,7 +675,7 @@ export default function DashboardPage() {
       </section>
 
       {showChat && (
-        <section className="panel mb-6 rounded-3xl p-4">
+        <section className="panel mb-6 rounded-[2rem] p-4">
           <div className="mb-3 flex items-center justify-between">
             <span className="font-bold text-slate-950">AI Life Coach</span>
             <button

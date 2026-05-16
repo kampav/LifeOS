@@ -28,8 +28,11 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Google Sans", "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 28rem),
-    linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%);
+    linear-gradient(115deg, rgba(59, 130, 246, 0.18), transparent 24%),
+    linear-gradient(250deg, rgba(236, 72, 153, 0.16), transparent 26%),
+    linear-gradient(25deg, rgba(20, 184, 166, 0.18), transparent 28%),
+    linear-gradient(180deg, #F8FBFF 0%, #EDF3FB 48%, #F8FAFC 100%);
+  background-attachment: fixed;
   color: #0F172A;
 }
 
@@ -44,23 +47,77 @@ body {
 
 .app-surface {
   background:
-    linear-gradient(135deg, rgba(255,255,255,0.92), rgba(248,250,252,0.78)),
-    radial-gradient(circle at 80% 0%, rgba(20,184,166,0.12), transparent 24rem);
+    linear-gradient(120deg, rgba(255,255,255,0.40), rgba(255,255,255,0.08)),
+    linear-gradient(35deg, rgba(37,99,235,0.13), transparent 32%),
+    linear-gradient(145deg, transparent 42%, rgba(236,72,153,0.12) 72%, rgba(20,184,166,0.13) 100%);
+  position: relative;
+  isolation: isolate;
+}
+
+.app-surface::before {
+  content: "";
+  position: fixed;
+  inset: -18%;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    conic-gradient(from 210deg at 24% 36%, rgba(37,99,235,0.22), rgba(20,184,166,0.16), rgba(236,72,153,0.18), rgba(245,158,11,0.12), rgba(37,99,235,0.22)),
+    linear-gradient(135deg, rgba(255,255,255,0.70), transparent 45%);
+  filter: blur(42px) saturate(1.25);
+  transform: translate3d(0, 0, 0);
+  animation: aurora-drift 18s ease-in-out infinite alternate;
+}
+
+.app-surface::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.30) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.22) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent 72%);
 }
 
 .panel {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  box-shadow: var(--shadow-card);
-  backdrop-filter: blur(16px);
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.76), rgba(255,255,255,0.42)),
+    linear-gradient(35deg, rgba(255,255,255,0.70), rgba(255,255,255,0.08));
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.95),
+    0 1px 2px rgba(15,23,42,0.04),
+    0 22px 60px rgba(30,41,59,0.12);
+  backdrop-filter: blur(26px) saturate(1.5);
+  -webkit-backdrop-filter: blur(26px) saturate(1.5);
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(110deg, rgba(255,255,255,0.42), transparent 24%, transparent 72%, rgba(255,255,255,0.20)),
+    linear-gradient(180deg, rgba(255,255,255,0.24), transparent 42%);
+  opacity: 0.8;
 }
 
 .panel-dark {
   background:
-    linear-gradient(135deg, rgba(15,23,42,0.96), rgba(30,41,59,0.95)),
-    radial-gradient(circle at top right, rgba(20,184,166,0.24), transparent 18rem);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+    linear-gradient(135deg, rgba(10,18,35,0.88), rgba(15,23,42,0.70)),
+    conic-gradient(from 165deg at 78% 20%, rgba(56,189,248,0.42), rgba(99,102,241,0.28), rgba(236,72,153,0.28), rgba(20,184,166,0.36), rgba(56,189,248,0.42));
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    0 32px 90px rgba(15, 23, 42, 0.30);
+  backdrop-filter: blur(30px) saturate(1.45);
+  -webkit-backdrop-filter: blur(30px) saturate(1.45);
+  animation: hero-breathe 9s ease-in-out infinite alternate;
 }
 
 .metric-label {
@@ -69,4 +126,76 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #64748B;
+}
+
+.glass-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-shine::after {
+  content: "";
+  position: absolute;
+  inset: -60% auto -60% -30%;
+  width: 34%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.48), transparent);
+  transform: rotate(18deg) translateX(-130%);
+  animation: glass-sweep 7s ease-in-out infinite;
+}
+
+.float-in {
+  animation: float-in 640ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.soft-float {
+  animation: soft-float 7s ease-in-out infinite;
+}
+
+.colour-rail {
+  background: linear-gradient(90deg, #2563EB, #14B8A6, #EC4899, #F59E0B);
+  background-size: 220% 100%;
+  animation: rail-shift 6s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift {
+  0% { transform: translate3d(-2%, -1%, 0) rotate(-2deg) scale(1); }
+  100% { transform: translate3d(2%, 2%, 0) rotate(3deg) scale(1.04); }
+}
+
+@keyframes hero-breathe {
+  0% { filter: saturate(1.05) brightness(1); }
+  100% { filter: saturate(1.25) brightness(1.05); }
+}
+
+@keyframes glass-sweep {
+  0%, 42% { transform: rotate(18deg) translateX(-150%); opacity: 0; }
+  55% { opacity: 0.75; }
+  78%, 100% { transform: rotate(18deg) translateX(430%); opacity: 0; }
+}
+
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes soft-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes rail-shift {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-surface::before,
+  .panel-dark,
+  .glass-shine::after,
+  .float-in,
+  .soft-float,
+  .colour-rail {
+    animation: none;
+  }
 }

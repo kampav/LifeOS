@@ -30,9 +30,9 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-72 min-h-screen px-4 py-5">
       {/* Logo */}
-      <div className="panel rounded-2xl px-4 py-4 mb-4">
+      <div className="panel glass-shine rounded-[1.75rem] px-4 py-4 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-slate-950 flex items-center justify-center shadow-lg shadow-slate-950/15">
+          <div className="w-10 h-10 rounded-2xl bg-[linear-gradient(135deg,#2563EB,#14B8A6,#EC4899)] flex items-center justify-center shadow-lg shadow-blue-500/25">
             <span className="text-white text-sm font-bold">LO</span>
           </div>
           <div>
@@ -43,11 +43,11 @@ export function Sidebar() {
       </div>
 
       {/* Main nav */}
-      <nav className="panel rounded-2xl p-2 space-y-1 mb-4">
+      <nav className="panel rounded-[1.75rem] p-2 space-y-1 mb-4">
         {NAV.map(({ href, icon: Icon, label }) => (
           <Link key={href} href={href}
             className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all",
-              pathname === href ? "bg-slate-950 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-950")}>
+              pathname === href ? "bg-[linear-gradient(135deg,#0F172A,#1E3A8A)] text-white shadow-lg shadow-blue-950/15" : "text-slate-600 hover:bg-white/55 hover:text-slate-950")}>
             <Icon className="w-4 h-4" />
             {label}
           </Link>
@@ -55,7 +55,7 @@ export function Sidebar() {
       </nav>
 
       {/* Domains */}
-      <div className="panel rounded-2xl p-2 flex-1 overflow-hidden flex flex-col">
+      <div className="panel rounded-[1.75rem] p-2 flex-1 overflow-hidden flex flex-col">
         <div className="px-3 py-2">
           <p className="metric-label">Life Domains</p>
         </div>
@@ -63,8 +63,8 @@ export function Sidebar() {
           {DOMAINS.map(d => (
             <Link key={d.id} href={`/${d.id}`}
               className={cn("flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all",
-                pathname === `/${d.id}` ? "bg-white text-slate-950 font-semibold shadow-sm ring-1 ring-slate-200/70" : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-950")}>
-              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm" style={{ background: d.color }} />
+                pathname === `/${d.id}` ? "bg-white/70 text-slate-950 font-semibold shadow-sm ring-1 ring-white/80" : "text-slate-600 hover:bg-white/45 hover:text-slate-950")}>
+              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm shadow-slate-400/30" style={{ background: d.color }} />
               {d.label}
             </Link>
           ))}
@@ -72,11 +72,11 @@ export function Sidebar() {
       </div>
 
       {/* Bottom */}
-      <div className="panel rounded-2xl p-2 space-y-1 mt-4">
-        <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100/80 hover:text-slate-950">
+      <div className="panel rounded-[1.75rem] p-2 space-y-1 mt-4">
+        <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-white/55 hover:text-slate-950">
           <Settings className="w-4 h-4" /> Settings
         </Link>
-        <button onClick={signOut} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600">
+        <button onClick={signOut} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50/70 hover:text-red-600">
           <LogOut className="w-4 h-4" /> Sign out
         </button>
       </div>

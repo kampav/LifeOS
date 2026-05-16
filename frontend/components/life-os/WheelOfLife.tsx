@@ -17,7 +17,8 @@ export function WheelOfLife({ scores }: Props) {
   }));
 
   return (
-    <div className="panel rounded-3xl p-5 sm:p-6">
+    <div className="panel glass-shine rounded-[2rem] p-5 sm:p-6">
+      <div className="absolute inset-x-6 top-0 h-1 rounded-full colour-rail opacity-70" />
       <div className="flex items-start justify-between gap-4 mb-2">
         <div>
           <p className="metric-label">Balance Map</p>
