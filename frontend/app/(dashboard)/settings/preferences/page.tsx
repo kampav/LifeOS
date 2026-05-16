@@ -1,8 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Activity, CheckCircle2, Lightbulb, SlidersHorizontal } from "lucide-react";
 import { api } from "@/lib/api";
-import { applyPersonalisation, savePreference, DEFAULT_PREFS } from "@/lib/personalisation";
+import { applyPersonalisation, DEFAULT_PREFS } from "@/lib/personalisation";
 import type { PersonalisationPrefs } from "@/lib/personalisation";
 
 const DOMAINS = ["health", "finance", "family", "social", "career", "growth", "property", "holiday", "community", "education"];
@@ -29,11 +29,36 @@ const ACCENT_COLOURS = [
   "#06B6D4", "#3B82F6", "#6B7280", "#1F2937",
 ];
 
+interface LearningInsight {
+  type: string;
+  severity: "info" | "positive" | "warning";
+  title: string;
+  message: string;
+  domain?: string | null;
+  action: string;
+}
+
+interface LearningResponse {
+  most_engaged_domain: string;
+  least_engaged_domain: string;
+  suggested_tone: number;
+  suggested_detail_level: number;
+  suggested_domain_weights: Record<string, number>;
+  confidence: "low" | "medium" | "high";
+  sample_size: number;
+  insights: LearningInsight[];
+}
+
 export default function PreferencesPage() {
   const qc = useQueryClient();
   const { data: prefs, isLoading } = useQuery<PersonalisationPrefs>({
     queryKey: ["personalisation"],
     queryFn: () => api.get("/users/me/personalisation").then(r => Array.isArray(r.data) ? r.data : r.data),
+  });
+
+  const { data: learning } = useQuery<LearningResponse>({
+    queryKey: ["personalisation-learning"],
+    queryFn: () => api.get("/users/me/personalisation/learning").then(r => r.data),
   });
 
   const mutation = useMutation({
@@ -59,6 +84,15 @@ export default function PreferencesPage() {
     mutation.mutate(updates);
   }
 
+  function applyLearningSuggestions() {
+    if (!learning) return;
+    patch({
+      domain_weights: learning.suggested_domain_weights,
+      coach_tone: learning.suggested_tone,
+      detail_level: learning.suggested_detail_level,
+    });
+  }
+
   if (isLoading) return <div className="p-6 text-sm text-gray-500">Loading preferences…</div>;
 
   return (
@@ -72,6 +106,66 @@ export default function PreferencesPage() {
           Reset to defaults
         </button>
       </div>
+
+      {learning && (
+        <section className="border border-slate-200 bg-slate-950 text-white rounded-xl overflow-hidden">
+          <div className="p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-cyan-200">
+                  <Activity className="h-4 w-4" />
+                  Adaptive learning
+                </div>
+                <h2 className="mt-2 text-lg font-semibold">Life OS is learning your operating rhythm</h2>
+                <p className="mt-1 text-sm text-slate-300">
+                  {learning.sample_size} behavioural signals analysed. Confidence: {learning.confidence}.
+                </p>
+              </div>
+              <button
+                onClick={applyLearningSuggestions}
+                disabled={mutation.isPending || learning.confidence === "low"}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                Apply suggestions
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                <div className="text-xs text-slate-400">Strongest signal</div>
+                <div className="mt-1 text-sm font-semibold capitalize">{learning.most_engaged_domain}</div>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                <div className="text-xs text-slate-400">Quietest domain</div>
+                <div className="mt-1 text-sm font-semibold capitalize">{learning.least_engaged_domain}</div>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                <div className="text-xs text-slate-400">Suggested style</div>
+                <div className="mt-1 text-sm font-semibold">
+                  Tone {learning.suggested_tone} / Detail {learning.suggested_detail_level}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {learning.insights.slice(0, 3).map((insight, index) => (
+                <div key={`${insight.type}-${index}`} className="flex gap-3 rounded-lg bg-white/5 p-3">
+                  {insight.severity === "positive" ? (
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-300" />
+                  ) : (
+                    <Lightbulb className="mt-0.5 h-4 w-4 flex-none text-cyan-200" />
+                  )}
+                  <div>
+                    <div className="text-sm font-medium">{insight.title}</div>
+                    <div className="mt-1 text-xs leading-5 text-slate-300">{insight.message}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Coach tone */}
       <section>

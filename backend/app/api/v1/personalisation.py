@@ -26,6 +26,8 @@ DEFAULTS = {
     "font_size": "medium",
 }
 
+DOMAINS = tuple(DEFAULTS["domain_weights"].keys())
+
 
 class PersonalisationUpdate(BaseModel):
     coach_tone: Optional[int] = Field(None, ge=1, le=5)
@@ -45,6 +47,125 @@ def _get_or_create_prefs(user_id: str, sb) -> dict:
     row = {"user_id": user_id, **DEFAULTS}
     sb.table("user_personalisation").insert(row).execute()
     return row
+
+
+def _safe_rows(sb, table_name: str, user_id: str, limit: int = 250) -> list[dict[str, Any]]:
+    """Read optional behavioural data without making preferences depend on every table."""
+    try:
+        result = (
+            sb.table(table_name)
+            .select("*")
+            .eq("user_id", user_id)
+            .limit(limit)
+            .execute()
+        )
+        return result.data or []
+    except Exception:
+        return []
+
+
+def _domain_counts(rows: list[dict[str, Any]], predicate=None) -> dict[str, int]:
+    counts = {domain: 0 for domain in DOMAINS}
+    for row in rows:
+        domain = row.get("domain")
+        if domain not in counts:
+            continue
+        if predicate and not predicate(row):
+            continue
+        counts[domain] += 1
+    return counts
+
+
+def _clamp_weight(value: int) -> int:
+    return max(1, min(10, value))
+
+
+def _build_learning_insights(prefs: dict, activity: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    weights = prefs.get("domain_weights") or DEFAULTS["domain_weights"]
+    sorted_domains = sorted(activity.items(), key=lambda item: item[1]["activity_score"], reverse=True)
+    most_domain, most_stats = sorted_domains[0]
+    least_domain, least_stats = sorted_domains[-1]
+    sample_size = sum(stats["sample_count"] for stats in activity.values())
+
+    suggested_weights: dict[str, int] = {}
+    max_score = max((stats["activity_score"] for stats in activity.values()), default=0)
+    for domain, stats in activity.items():
+        current = int(weights.get(domain, 5))
+        if sample_size < 5:
+            suggested_weights[domain] = current
+            continue
+        if stats["activity_score"] == max_score and max_score > 0:
+            suggested_weights[domain] = _clamp_weight(current + 1)
+        elif stats["activity_score"] == 0 and current > 3:
+            suggested_weights[domain] = _clamp_weight(current - 1)
+        else:
+            suggested_weights[domain] = current
+
+    insights = []
+    if sample_size < 5:
+        insights.append({
+            "type": "data_quality",
+            "severity": "info",
+            "title": "Not enough behavioural signal yet",
+            "message": "Log a few more entries, goals, tasks, or planner items before Life OS tunes your focus automatically.",
+            "domain": None,
+            "action": "Keep capturing normally",
+        })
+    else:
+        insights.append({
+            "type": "engagement",
+            "severity": "positive",
+            "title": f"{most_domain.title()} is your strongest signal",
+            "message": (
+                f"Recent activity is concentrated in {most_domain}. "
+                "Life OS can give that domain slightly more influence in coaching and life score weighting."
+            ),
+            "domain": most_domain,
+            "action": f"Raise {most_domain} focus by 1",
+        })
+        if least_stats["activity_score"] == 0:
+            insights.append({
+                "type": "blind_spot",
+                "severity": "warning",
+                "title": f"{least_domain.title()} has no recent signal",
+                "message": (
+                    f"No recent activity was found for {least_domain}. "
+                    "This may be fine, but it is worth checking whether the domain should stay highly weighted."
+                ),
+                "domain": least_domain,
+                "action": f"Review {least_domain} priority",
+            })
+
+    suggested_tone = prefs.get("coach_tone", 2)
+    open_tasks = sum(stats["open_tasks"] for stats in activity.values())
+    active_goals = sum(stats["active_goals"] for stats in activity.values())
+    if open_tasks >= 8:
+        suggested_tone = 3
+        insights.append({
+            "type": "coach_style",
+            "severity": "info",
+            "title": "Direct coaching may help execution",
+            "message": "You have a meaningful number of open tasks, so a more direct coach tone may reduce noise.",
+            "domain": None,
+            "action": "Try Direct tone",
+        })
+
+    suggested_detail = prefs.get("detail_level", 3)
+    if active_goals >= 6:
+        suggested_detail = max(suggested_detail, 4)
+
+    confidence = "low" if sample_size < 5 else "medium" if sample_size < 25 else "high"
+    return {
+        "most_engaged_domain": most_domain,
+        "least_engaged_domain": least_domain,
+        "suggested_tone": suggested_tone,
+        "suggested_detail_level": suggested_detail,
+        "suggested_domain_weights": suggested_weights,
+        "confidence": confidence,
+        "sample_size": sample_size,
+        "domain_activity": activity,
+        "insights": insights,
+    }
 
 
 @router.get("")
@@ -78,17 +199,50 @@ async def reset_personalisation(user: User = Depends(get_current_user)):
 
 @router.get("/learning")
 async def get_learning_insights(user: User = Depends(get_current_user)):
-    """Return AI-derived insights about user patterns (placeholder for v1.2 ML)."""
+    """Return rule-based learning insights from the user's recent behavioural data."""
     sb = get_supabase()
     prefs = _get_or_create_prefs(user.id, sb)
-    return {
-        "most_engaged_domain": max(
-            prefs.get("domain_weights", DEFAULTS["domain_weights"]),
-            key=lambda d: prefs.get("domain_weights", DEFAULTS["domain_weights"]).get(d, 5),
-        ),
-        "suggested_tone": prefs.get("coach_tone", 2),
-        "insights": [],
-    }
+
+    entries = _safe_rows(sb, "entries", user.id)
+    goals = _safe_rows(sb, "goals", user.id)
+    habits = _safe_rows(sb, "habits", user.id)
+    tasks = _safe_rows(sb, "tasks", user.id)
+    planner = _safe_rows(sb, "planner_items", user.id)
+
+    entry_counts = _domain_counts(entries)
+    active_goal_counts = _domain_counts(goals, lambda row: row.get("status", "active") == "active")
+    active_habit_counts = _domain_counts(habits, lambda row: row.get("is_active", True) is True)
+    open_task_counts = _domain_counts(tasks, lambda row: row.get("status") not in ("done", "archived"))
+    planner_counts = _domain_counts(planner)
+
+    weights = prefs.get("domain_weights") or DEFAULTS["domain_weights"]
+    activity = {}
+    for domain in DOMAINS:
+        activity_score = (
+            entry_counts[domain]
+            + (active_goal_counts[domain] * 2)
+            + active_habit_counts[domain]
+            + open_task_counts[domain]
+            + planner_counts[domain]
+        )
+        activity[domain] = {
+            "entries": entry_counts[domain],
+            "active_goals": active_goal_counts[domain],
+            "active_habits": active_habit_counts[domain],
+            "open_tasks": open_task_counts[domain],
+            "planner_items": planner_counts[domain],
+            "activity_score": activity_score,
+            "sample_count": (
+                entry_counts[domain]
+                + active_goal_counts[domain]
+                + active_habit_counts[domain]
+                + open_task_counts[domain]
+                + planner_counts[domain]
+            ),
+            "current_weight": int(weights.get(domain, 5)),
+        }
+
+    return _build_learning_insights(prefs, activity)
 
 
 @router.post("/undo")

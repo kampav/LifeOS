@@ -142,3 +142,63 @@ def test_reset_restores_defaults():
     domains = list(DEFAULTS["domain_weights"].keys())
     assert "health" in domains and "finance" in domains
     assert all(v == 5 for v in DEFAULTS["domain_weights"].values())
+
+
+def test_learning_insights_raise_active_domain_weight():
+    """Learning engine should suggest a small weight increase for the strongest signal."""
+    from app.api.v1.personalisation import DEFAULTS, DOMAINS, _build_learning_insights
+
+    activity = {
+        domain: {
+            "entries": 0,
+            "active_goals": 0,
+            "active_habits": 0,
+            "open_tasks": 0,
+            "planner_items": 0,
+            "activity_score": 0,
+            "sample_count": 0,
+            "current_weight": 5,
+        }
+        for domain in DOMAINS
+    }
+    activity["health"].update({
+        "entries": 4,
+        "active_goals": 2,
+        "active_habits": 1,
+        "open_tasks": 2,
+        "activity_score": 11,
+        "sample_count": 9,
+    })
+
+    result = _build_learning_insights({"domain_weights": DEFAULTS["domain_weights"], "coach_tone": 2}, activity)
+
+    assert result["most_engaged_domain"] == "health"
+    assert result["suggested_domain_weights"]["health"] == 6
+    assert result["confidence"] == "medium"
+    assert result["insights"]
+
+
+def test_learning_insights_low_signal_keeps_weights():
+    """Low sample sizes should not produce premature tuning recommendations."""
+    from app.api.v1.personalisation import DEFAULTS, DOMAINS, _build_learning_insights
+
+    activity = {
+        domain: {
+            "entries": 0,
+            "active_goals": 0,
+            "active_habits": 0,
+            "open_tasks": 0,
+            "planner_items": 0,
+            "activity_score": 0,
+            "sample_count": 0,
+            "current_weight": 5,
+        }
+        for domain in DOMAINS
+    }
+    activity["finance"].update({"entries": 1, "activity_score": 1, "sample_count": 1})
+
+    result = _build_learning_insights({"domain_weights": DEFAULTS["domain_weights"], "coach_tone": 2}, activity)
+
+    assert result["sample_size"] == 1
+    assert result["suggested_domain_weights"] == DEFAULTS["domain_weights"]
+    assert result["insights"][0]["type"] == "data_quality"
