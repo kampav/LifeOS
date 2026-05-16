@@ -47,6 +47,27 @@ interface HomescreenData {
   this_week?: { tasks?: unknown[] | null; goals?: unknown[] | null } | null;
   this_month?: { tasks?: unknown[] | null; goals?: unknown[] | null } | null;
   this_year?: { tasks?: unknown[] | null; goals?: unknown[] | null; life_score_note?: string | null } | null;
+  agenda?: unknown[] | null;
+  kanban_summary?: {
+    columns?: Record<string, number> | null;
+    open_total?: number | null;
+    blocked_total?: number | null;
+    active_total?: number | null;
+  } | null;
+  next_best_action?: {
+    type?: string | null;
+    id?: string | null;
+    title?: string | null;
+    reason?: string | null;
+    domain?: string | null;
+    priority?: string | null;
+  } | null;
+  integration_summary?: {
+    task_count?: number | null;
+    planner_count?: number | null;
+    agenda_count?: number | null;
+    linked_task_count?: number | null;
+  } | null;
   generated_at?: string;
   from_cache?: boolean;
 }
@@ -64,6 +85,7 @@ interface LearningResponse {
 type TaskItem = { id: string; title: string; domain?: string; priority?: string };
 type HabitItem = { id: string; name: string; domain?: string };
 type FixedItem = { id: string; title: string };
+type AgendaItem = { id?: string; title?: string; domain?: string; start_at?: string; due_date?: string; source_type?: string; item_type?: string };
 type NextAction =
   | { kind: "link"; label: string; reason: string; cta: string; href: string }
   | { kind: "task"; label: string; reason: string; cta: string; taskId: string }
@@ -83,6 +105,19 @@ function validHabit(item: HabitItem): item is HabitItem {
 
 function validFixedItem(item: FixedItem): item is FixedItem {
   return Boolean(item?.id && item?.title);
+}
+
+function validAgendaItem(item: AgendaItem): item is AgendaItem {
+  return Boolean(item?.title);
+}
+
+function formatAgendaDate(value?: string) {
+  if (!value) return "Soon";
+  try {
+    return new Date(value).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  } catch {
+    return String(value).slice(0, 10);
+  }
 }
 
 function TaskRow({
@@ -204,7 +239,15 @@ export default function DashboardPage() {
   const todayHabits = asArray<HabitItem>(homescreen?.today?.habits).filter(validHabit);
   const fixedItems = asArray<FixedItem>(homescreen?.today?.non_movable).filter(validFixedItem);
   const weekTasks = asArray<TaskItem>(homescreen?.this_week?.tasks).filter(validTask);
-  const totalTasks = todayTasks.length + weekTasks.length;
+  const agendaItems = asArray<AgendaItem>(homescreen?.agenda).filter(validAgendaItem);
+  const kanbanSummary = homescreen?.kanban_summary ?? {};
+  const integrationSummary = homescreen?.integration_summary ?? {};
+  const openKanbanTotal = typeof kanbanSummary.open_total === "number" ? kanbanSummary.open_total : todayTasks.length + weekTasks.length;
+  const activeKanbanTotal = typeof kanbanSummary.active_total === "number" ? kanbanSummary.active_total : 0;
+  const blockedKanbanTotal = typeof kanbanSummary.blocked_total === "number" ? kanbanSummary.blocked_total : 0;
+  const plannerCount = typeof integrationSummary.planner_count === "number" ? integrationSummary.planner_count : agendaItems.length;
+  const linkedTaskCount = typeof integrationSummary.linked_task_count === "number" ? integrationSummary.linked_task_count : agendaItems.filter(item => item.source_type === "task" || item.item_type === "task").length;
+  const totalTasks = openKanbanTotal;
   const domainEntries = Object.entries(domainScores ?? {}).filter((entry): entry is [string, number] => typeof entry[1] === "number");
   const topDomain = domainEntries.sort((a, b) => b[1] - a[1])[0];
   const quietDomain = Object.entries(domainScores ?? {}).sort((a, b) => a[1] - b[1])[0];
@@ -213,7 +256,16 @@ export default function DashboardPage() {
   const momentumTotal = fixedItems.length + todayTasks.length + todayHabits.length;
   const momentumScore = Math.min(100, Math.max(12, 100 - momentumTotal * 9));
 
-  const nextAction: NextAction = fixedItems[0]
+  const backendAction = homescreen?.next_best_action;
+  const nextAction: NextAction = backendAction?.title && backendAction?.id
+    ? {
+        kind: backendAction.type === "capture" ? "capture" : backendAction.type === "planner" ? "link" : "task",
+        label: backendAction.title,
+        reason: backendAction.reason || "Selected from your integrated planner and Kanban work graph.",
+        cta: backendAction.type === "planner" ? "Open planner" : backendAction.type === "capture" ? "Quick capture" : "Complete it",
+        ...(backendAction.type === "planner" ? { href: "/planner" } : backendAction.type === "capture" ? {} : { taskId: backendAction.id }),
+      } as NextAction
+    : fixedItems[0]
     ? {
         kind: "link",
         label: fixedItems[0].title,
@@ -368,12 +420,12 @@ export default function DashboardPage() {
               <div className="mt-1 text-3xl font-black">{lifeScore}</div>
             </div>
             <div className="soft-float rounded-3xl border border-white/15 bg-white/[0.14] p-4 shadow-2xl shadow-blue-950/10 backdrop-blur-2xl [animation-delay:900ms]">
-              <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Tasks</div>
+              <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Kanban</div>
               <div className="mt-1 text-3xl font-black">{totalTasks}</div>
             </div>
             <div className="soft-float rounded-3xl border border-white/15 bg-white/[0.14] p-4 shadow-2xl shadow-blue-950/10 backdrop-blur-2xl [animation-delay:1800ms]">
-              <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Focus</div>
-              <div className="mt-1 truncate text-lg font-black capitalize">{topDomain?.[0] || "Start"}</div>
+              <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Planner</div>
+              <div className="mt-1 text-3xl font-black">{plannerCount}</div>
             </div>
           </div>
         </div>
@@ -515,6 +567,84 @@ export default function DashboardPage() {
             <Gauge className="h-4 w-4" />
             Apply adaptive tuning
           </button>
+        </div>
+      </section>
+
+      <section className="mb-6 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="panel glass-shine float-in rounded-[2rem] p-5 [animation-delay:420ms]">
+          <div className="absolute inset-x-5 top-0 h-1 rounded-full colour-rail" />
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="metric-label">Integrated OS</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">Planner, Kanban and AI are now one graph</h2>
+            </div>
+            <Sparkles className="h-5 w-5 text-pink-500" />
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            <div className="rounded-3xl border border-white/70 bg-white/45 p-4 shadow-inner backdrop-blur-xl">
+              <div className="text-[11px] font-black uppercase tracking-wide text-slate-400">Open</div>
+              <div className="mt-1 text-3xl font-black text-slate-950">{openKanbanTotal}</div>
+            </div>
+            <div className="rounded-3xl border border-white/70 bg-white/45 p-4 shadow-inner backdrop-blur-xl">
+              <div className="text-[11px] font-black uppercase tracking-wide text-slate-400">Active</div>
+              <div className="mt-1 text-3xl font-black text-cyan-700">{activeKanbanTotal}</div>
+            </div>
+            <div className="rounded-3xl border border-white/70 bg-white/45 p-4 shadow-inner backdrop-blur-xl">
+              <div className="text-[11px] font-black uppercase tracking-wide text-slate-400">Blocked</div>
+              <div className="mt-1 text-3xl font-black text-rose-600">{blockedKanbanTotal}</div>
+            </div>
+          </div>
+          <p className="mt-4 text-sm leading-6 text-slate-600">
+            The AI coach now receives recent entries, goals, habits, open Kanban tasks, planner events and linked goal/task context before it recommends the next move.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link
+              href="/planner"
+              className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-800"
+            >
+              <Calendar className="h-4 w-4" />
+              Planner
+            </Link>
+            <Link
+              href="/kanban"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/70 bg-white/45 px-4 py-3 text-sm font-black text-slate-700 shadow-sm backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-white"
+            >
+              <Layers3 className="h-4 w-4" />
+              Kanban
+            </Link>
+          </div>
+        </div>
+
+        <div className="panel float-in rounded-[2rem] p-5 [animation-delay:520ms]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="metric-label">Unified Agenda</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">What the system is planning around</h2>
+            </div>
+            <span className="rounded-full border border-cyan-200/80 bg-cyan-50/80 px-3 py-1 text-[11px] font-black text-cyan-700 backdrop-blur-xl">
+              {linkedTaskCount} linked
+            </span>
+          </div>
+          <div className="mt-4 space-y-2">
+            {agendaItems.slice(0, 5).map((item, index) => (
+              <div key={`${item.id || item.title}-${index}`} className="flex items-center gap-3 rounded-2xl border border-white/65 bg-white/42 px-3 py-3 backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/65">
+                <div className="flex h-11 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-center text-[10px] font-black uppercase leading-tight text-white">
+                  {formatAgendaDate(item.start_at || item.due_date)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-black text-slate-900">{item.title}</p>
+                  <p className="mt-0.5 text-xs font-bold capitalize text-slate-400">
+                    {item.domain || "life"} · {item.source_type === "task" || item.item_type === "task" ? "Kanban task" : "Planner item"}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {!agendaItems.length && (
+              <div className="rounded-3xl border border-white/70 bg-white/45 p-5 text-sm font-semibold text-slate-500">
+                No dated work yet. Add due dates in Kanban or planner items and the AI will use them for prioritisation.
+              </div>
+            )}
+          </div>
         </div>
       </section>
 

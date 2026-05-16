@@ -22,6 +22,23 @@ from app.services.prioritiser import priority_score
 router = APIRouter(prefix="/planner", tags=["planner"])
 
 
+def _task_to_planner_item(task: dict) -> dict:
+    """Represent a Kanban task as a planner item when it has a due date."""
+    due = task.get("due_date")
+    return {
+        **task,
+        "id": task.get("id"),
+        "item_type": "task",
+        "source_type": "task",
+        "source_id": task.get("id"),
+        "task_id": task.get("id"),
+        "start_at": due,
+        "end_at": None,
+        "all_day": True,
+        "completed": task.get("status") == "done",
+    }
+
+
 class PlannerItemCreate(BaseModel):
     title: str
     domain: Optional[str] = None
@@ -70,9 +87,28 @@ async def get_planner(
     result = query.order("start_at").execute()
     items = result.data or []
 
+    # Planner view is the user's operating calendar, so include Kanban tasks
+    # with due dates in the same window rather than making users check two places.
+    task_query = (
+        sb.table("tasks")
+        .select("*")
+        .eq("user_id", user.id)
+        .neq("status", "done")
+        .neq("status", "archived")
+        .gte("due_date", start_dt.date().isoformat())
+        .lte("due_date", end_dt.date().isoformat())
+    )
+    if domain:
+        task_query = task_query.eq("domain", domain)
+    task_result = task_query.execute()
+    task_items = [_task_to_planner_item(t) for t in (task_result.data or []) if t.get("due_date")]
+    items += task_items
+
     if q:
         q_lower = q.lower()
         items = [i for i in items if q_lower in i.get("title", "").lower()]
+
+    items.sort(key=lambda x: x.get("start_at") or x.get("due_date") or "")
 
     return {"view": view, "start": start_dt.isoformat(), "end": end_dt.isoformat(), "items": items}
 
@@ -106,7 +142,7 @@ async def get_agenda(days: int = Query(14), user: User = Depends(get_current_use
     # Also include tasks with due dates
     task_result = (sb.table("tasks").select("*").eq("user_id", user.id)
                    .neq("status", "done").neq("status", "archived").execute())
-    tasks_with_due = [t for t in (task_result.data or []) if t.get("due_date")]
+    tasks_with_due = [_task_to_planner_item(t) for t in (task_result.data or []) if t.get("due_date")]
     all_items = (result.data or []) + tasks_with_due
     all_items.sort(key=lambda x: x.get("start_at") or x.get("due_date") or "")
     return {"days": days, "items": all_items}
