@@ -17,11 +17,19 @@ export function WheelOfLife({ scores }: Props) {
   }));
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-card">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Wheel of Life</h3>
+    <div className="panel rounded-3xl p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-4 mb-2">
+        <div>
+          <p className="metric-label">Balance Map</p>
+          <h3 className="text-xl font-black tracking-tight text-slate-950 mt-1">Wheel of Life</h3>
+        </div>
+        <div className="rounded-full bg-slate-950 px-3 py-1 text-xs font-bold text-white">
+          10 domains
+        </div>
+      </div>
       <ResponsiveContainer width="100%" height={320}>
         <RadarChart data={data}>
-          <PolarGrid stroke="#F3F4F6" />
+          <PolarGrid stroke="#E2E8F0" />
           <PolarAngleAxis
             dataKey="domain"
             tick={({ payload, x, y, textAnchor }) => {
@@ -44,13 +52,13 @@ export function WheelOfLife({ scores }: Props) {
             name="Score"
             dataKey="score"
             stroke="#6366F1"
-            fill="#6366F1"
-            fillOpacity={0.15}
+            fill="#2563EB"
+            fillOpacity={0.14}
             strokeWidth={2}
           />
           <Tooltip
             formatter={(value: number) => [`${value}/100`, "Score"]}
-            contentStyle={{ borderRadius: 12, border: "1px solid #F3F4F6", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
+            contentStyle={{ borderRadius: 12, border: "1px solid #E2E8F0", boxShadow: "0 18px 44px rgba(15,23,42,0.12)" }}
           />
         </RadarChart>
       </ResponsiveContainer>

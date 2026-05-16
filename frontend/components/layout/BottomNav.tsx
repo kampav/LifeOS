@@ -15,13 +15,13 @@ const NAV = [
 export function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50">
-      <div className="flex">
+    <nav className="md:hidden fixed bottom-3 left-3 right-3 z-50">
+      <div className="panel flex rounded-2xl px-1 py-1">
         {NAV.map(({ href, icon: Icon, label }) => (
           <Link key={href} href={href}
-            className={cn("flex-1 flex flex-col items-center gap-1 py-3 text-xs transition-colors",
-              pathname === href ? "text-primary" : "text-gray-500")}>
-            <Icon className="w-5 h-5" />
+            className={cn("flex-1 flex flex-col items-center gap-1 rounded-xl py-2.5 text-[11px] font-semibold transition-all",
+              pathname === href ? "bg-slate-950 text-white" : "text-slate-500")}>
+            <Icon className="w-4 h-4" />
             <span>{label}</span>
           </Link>
         ))}

@@ -12,14 +12,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect("/login");
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen app-surface">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-14 bg-white border-b border-gray-100 flex items-center justify-end px-6 flex-shrink-0 md:flex hidden">
+        <div className="h-16 flex items-center justify-end px-6 flex-shrink-0 md:flex hidden">
           <NotificationBell />
         </div>
         <PersonalisationInit />
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        <main className="flex-1 overflow-y-auto pb-24 md:pb-8">
           <ErrorBoundary>
             {children}
           </ErrorBoundary>

@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check } from "lucide-react";
 import { api } from "@/lib/api";
-import { motion, AnimatePresence } from "framer-motion";
 import { format, parseISO } from "date-fns";
 
 export function NotificationBell() {
@@ -29,68 +28,81 @@ export function NotificationBell() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
-  const TYPE_ICONS: Record<string, string> = {
-    review_ready: "📊", goal_reminder: "🎯", relationship_check: "👥",
-    coach_insight: "✨", system: "🔔",
+  const typeLabels: Record<string, string> = {
+    review_ready: "Review",
+    goal_reminder: "Goal",
+    relationship_check: "Social",
+    coach_insight: "Coach",
+    system: "System",
   };
 
   return (
     <div className="relative">
-      <button onClick={() => setOpen(s => !s)}
-        className="relative w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-        <Bell className="w-4 h-4 text-gray-600" />
+      <button
+        onClick={() => setOpen(s => !s)}
+        className="relative flex h-10 w-10 items-center justify-center rounded-2xl panel transition hover:bg-white"
+        aria-label="Notifications"
+      >
+        <Bell className="h-4 w-4 text-slate-700" />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary rounded-full text-white text-[10px] font-bold flex items-center justify-center">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-slate-950 text-[10px] font-bold text-white">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: 8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.95 }}
-              className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden"
-            >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <span className="font-semibold text-gray-900 text-sm">Notifications</span>
-                {unread > 0 && (
-                  <button onClick={() => markAllRead.mutate()}
-                    className="text-xs text-primary font-medium flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Mark all read
-                  </button>
-                )}
-              </div>
-              <div className="max-h-96 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="py-10 text-center text-gray-400 text-sm">All caught up!</div>
-                ) : (
-                  notifications.map((n: Record<string, unknown>) => (
-                    <div key={n.id as string}
-                      onClick={() => { if (!n.read) markRead.mutate(n.id as string); setOpen(false); }}
-                      className={`px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${!n.read ? "bg-indigo-50/50" : ""}`}
-                    >
-                      <div className="flex gap-3 items-start">
-                        <span className="text-lg flex-shrink-0 mt-0.5">{TYPE_ICONS[n.type as string] || "🔔"}</span>
-                        <div className="min-w-0">
-                          <p className={`text-sm ${!n.read ? "font-semibold text-gray-900" : "text-gray-700"} line-clamp-1`}>{n.title as string}</p>
-                          {n.body ? <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.body as string}</p> : null}
-                          <p className="text-xs text-gray-400 mt-1">{format(parseISO(n.created_at as string), "MMM d, h:mm a")}</p>
-                        </div>
-                        {!n.read ? <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" /> : null}
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-12 z-50 w-[21.5rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl panel">
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+              <span className="text-sm font-bold text-slate-950">Notifications</span>
+              {unread > 0 && (
+                <button
+                  onClick={() => markAllRead.mutate()}
+                  className="flex items-center gap-1 text-xs font-bold text-primary"
+                >
+                  <Check className="h-3 w-3" /> Mark all read
+                </button>
+              )}
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="py-10 text-center text-sm text-slate-400">All caught up</div>
+              ) : (
+                notifications.map((n: Record<string, unknown>) => (
+                  <div
+                    key={n.id as string}
+                    onClick={() => {
+                      if (!n.read) markRead.mutate(n.id as string);
+                      setOpen(false);
+                    }}
+                    className={`cursor-pointer border-b border-slate-100 px-4 py-3 transition-colors hover:bg-slate-50 ${
+                      !n.read ? "bg-blue-50/60" : ""
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">
+                        {typeLabels[n.type as string] || "Alert"}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className={`line-clamp-1 text-sm ${!n.read ? "font-bold text-slate-950" : "text-slate-700"}`}>
+                          {n.title as string}
+                        </p>
+                        {n.body ? <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{n.body as string}</p> : null}
+                        <p className="mt-1 text-xs text-slate-400">
+                          {format(parseISO(n.created_at as string), "MMM d, h:mm a")}
+                        </p>
                       </div>
+                      {!n.read ? <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-primary" /> : null}
                     </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

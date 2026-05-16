@@ -18,7 +18,7 @@ export function LifeScore({ score, size = "md" }: Props) {
     <div className="flex flex-col items-center gap-2">
       <div className="relative" style={{ width: w, height: w }}>
         <svg width={w} height={w} className="-rotate-90">
-          <circle cx={w / 2} cy={w / 2} r={r} fill="none" stroke="#F3F4F6" strokeWidth={sw} />
+          <circle cx={w / 2} cy={w / 2} r={r} fill="none" stroke="#E2E8F0" strokeWidth={sw} />
           <motion.circle
             cx={w / 2} cy={w / 2} r={r} fill="none" strokeWidth={sw}
             stroke={color} strokeLinecap="round"
@@ -29,11 +29,11 @@ export function LifeScore({ score, size = "md" }: Props) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-bold text-gray-900" style={{ fontSize: size === "lg" ? 28 : size === "md" ? 22 : 16 }}>{score}</span>
-          <span className="text-gray-400 text-xs">/100</span>
+          <span className="font-black tracking-tight text-slate-950" style={{ fontSize: size === "lg" ? 34 : size === "md" ? 24 : 16 }}>{score}</span>
+          <span className="text-slate-400 text-xs font-semibold">/100</span>
         </div>
       </div>
-      <span className="text-sm font-medium" style={{ color }}>{label}</span>
+      <span className="text-sm font-bold" style={{ color }}>{label}</span>
     </div>
   );
 }

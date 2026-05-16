@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { DOMAINS } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, MessageCircle, Target, Activity, Settings, LogOut, Sparkles } from "lucide-react";
+import { LayoutDashboard, MessageCircle, Target, Activity, Settings, LogOut, Sparkles, CalendarDays, KanbanSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -12,6 +12,8 @@ const NAV = [
   { href: "/coach", icon: MessageCircle, label: "AI Coach" },
   { href: "/goals", icon: Target, label: "Goals" },
   { href: "/habits", icon: Activity, label: "Habits" },
+  { href: "/planner", icon: CalendarDays, label: "Planner" },
+  { href: "/kanban", icon: KanbanSquare, label: "Kanban" },
   { href: "/review", icon: Sparkles, label: "Reviews" },
 ];
 
@@ -26,21 +28,26 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="hidden md:flex flex-col w-60 min-h-screen bg-white border-r border-gray-100 py-6 px-3">
+    <aside className="hidden md:flex flex-col w-72 min-h-screen px-4 py-5">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-3 mb-8">
-        <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
-          <span className="text-white text-sm font-bold">L</span>
+      <div className="panel rounded-2xl px-4 py-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-slate-950 flex items-center justify-center shadow-lg shadow-slate-950/15">
+            <span className="text-white text-sm font-bold">LO</span>
+          </div>
+          <div>
+            <span className="font-bold text-slate-950 text-lg leading-none">Life OS</span>
+            <p className="text-xs text-slate-500 mt-0.5">Personal command centre</p>
+          </div>
         </div>
-        <span className="font-bold text-gray-900 text-lg">Life OS</span>
       </div>
 
       {/* Main nav */}
-      <nav className="space-y-1 mb-6">
+      <nav className="panel rounded-2xl p-2 space-y-1 mb-4">
         {NAV.map(({ href, icon: Icon, label }) => (
           <Link key={href} href={href}
-            className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-              pathname === href ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")}>
+            className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all",
+              pathname === href ? "bg-slate-950 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-950")}>
             <Icon className="w-4 h-4" />
             {label}
           </Link>
@@ -48,26 +55,28 @@ export function Sidebar() {
       </nav>
 
       {/* Domains */}
-      <div className="px-3 mb-2">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Life Domains</p>
+      <div className="panel rounded-2xl p-2 flex-1 overflow-hidden flex flex-col">
+        <div className="px-3 py-2">
+          <p className="metric-label">Life Domains</p>
+        </div>
+        <nav className="space-y-0.5 overflow-y-auto pr-1">
+          {DOMAINS.map(d => (
+            <Link key={d.id} href={`/${d.id}`}
+              className={cn("flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all",
+                pathname === `/${d.id}` ? "bg-white text-slate-950 font-semibold shadow-sm ring-1 ring-slate-200/70" : "text-slate-600 hover:bg-slate-100/70 hover:text-slate-950")}>
+              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm" style={{ background: d.color }} />
+              {d.label}
+            </Link>
+          ))}
+        </nav>
       </div>
-      <nav className="space-y-0.5 flex-1 overflow-y-auto">
-        {DOMAINS.map(d => (
-          <Link key={d.id} href={`/${d.id}`}
-            className={cn("flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-              pathname === `/${d.id}` ? "bg-gray-100 text-gray-900 font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900")}>
-            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.color }} />
-            {d.label}
-          </Link>
-        ))}
-      </nav>
 
       {/* Bottom */}
-      <div className="space-y-1 pt-4 border-t border-gray-100 mt-4">
-        <Link href="/settings" className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+      <div className="panel rounded-2xl p-2 space-y-1 mt-4">
+        <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100/80 hover:text-slate-950">
           <Settings className="w-4 h-4" /> Settings
         </Link>
-        <button onClick={signOut} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+        <button onClick={signOut} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600">
           <LogOut className="w-4 h-4" /> Sign out
         </button>
       </div>
