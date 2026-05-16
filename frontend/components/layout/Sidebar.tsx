@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { LayoutDashboard, MessageCircle, Target, Activity, Settings, LogOut, Sparkles, CalendarDays, KanbanSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 const NAV = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -32,7 +33,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="panel glass-shine rounded-[1.75rem] px-4 py-4 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[linear-gradient(135deg,#2563EB,#14B8A6,#EC4899)] flex items-center justify-center shadow-lg shadow-blue-500/25">
+          <div className="w-10 h-10 rounded-2xl bg-[linear-gradient(135deg,var(--md-primary),var(--md-secondary),var(--md-tertiary))] flex items-center justify-center shadow-lg shadow-blue-500/25">
             <span className="text-white text-sm font-bold">LO</span>
           </div>
           <div>
@@ -47,7 +48,7 @@ export function Sidebar() {
         {NAV.map(({ href, icon: Icon, label }) => (
           <Link key={href} href={href}
             className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all",
-              pathname === href ? "bg-[linear-gradient(135deg,#0F172A,#1E3A8A)] text-white shadow-lg shadow-blue-950/15" : "text-slate-600 hover:bg-white/55 hover:text-slate-950")}>
+              pathname === href ? "bg-[linear-gradient(135deg,var(--md-primary),var(--md-secondary))] text-white shadow-lg shadow-blue-950/15" : "text-slate-600 hover:bg-white/55 hover:text-slate-950")}>
             <Icon className="w-4 h-4" />
             {label}
           </Link>
@@ -73,6 +74,9 @@ export function Sidebar() {
 
       {/* Bottom */}
       <div className="panel rounded-[1.75rem] p-2 space-y-1 mt-4">
+        <div className="px-1 pb-1">
+          <ThemeToggle />
+        </div>
         <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-white/55 hover:text-slate-950">
           <Settings className="w-4 h-4" /> Settings
         </Link>

@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { NotificationBell } from "@/components/layout/Header";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PersonalisationInit } from "@/components/life-os/PersonalisationInit";
 import { createClient } from "@/lib/supabase/server";
@@ -15,7 +16,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex min-h-screen app-surface">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-16 flex items-center justify-end px-6 flex-shrink-0 md:flex hidden">
+        <div className="h-16 flex items-center justify-end gap-3 px-6 flex-shrink-0 md:flex hidden">
+          <ThemeToggle compact />
           <NotificationBell />
         </div>
         <PersonalisationInit />
