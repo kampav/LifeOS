@@ -43,11 +43,11 @@ const TABS = ["TODAY", "THIS WEEK", "THIS MONTH", "THIS YEAR"] as const;
 type Tab = typeof TABS[number];
 
 interface HomescreenData {
-  today: { non_movable: unknown[]; tasks: unknown[]; habits: unknown[]; coaching_question: string };
-  this_week: { tasks: unknown[]; goals: unknown[] };
-  this_month: { tasks: unknown[]; goals: unknown[] };
-  this_year: { tasks: unknown[]; goals: unknown[]; life_score_note?: string };
-  generated_at: string;
+  today?: { non_movable?: unknown[] | null; tasks?: unknown[] | null; habits?: unknown[] | null; coaching_question?: string | null } | null;
+  this_week?: { tasks?: unknown[] | null; goals?: unknown[] | null } | null;
+  this_month?: { tasks?: unknown[] | null; goals?: unknown[] | null } | null;
+  this_year?: { tasks?: unknown[] | null; goals?: unknown[] | null; life_score_note?: string | null } | null;
+  generated_at?: string;
   from_cache?: boolean;
 }
 
@@ -68,6 +68,22 @@ type NextAction =
   | { kind: "link"; label: string; reason: string; cta: string; href: string }
   | { kind: "task"; label: string; reason: string; cta: string; taskId: string }
   | { kind: "capture"; label: string; reason: string; cta: string };
+
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function validTask(item: TaskItem): item is TaskItem {
+  return Boolean(item?.id && item?.title);
+}
+
+function validHabit(item: HabitItem): item is HabitItem {
+  return Boolean(item?.id && item?.name);
+}
+
+function validFixedItem(item: FixedItem): item is FixedItem {
+  return Boolean(item?.id && item?.title);
+}
 
 function TaskRow({
   task,
@@ -111,13 +127,18 @@ export default function DashboardPage() {
   const [insightRevealed, setInsightRevealed] = useState(false);
 
   useEffect(() => {
-    const now = new Date();
-    const h = now.getHours();
-    const key = now.toISOString().slice(0, 10);
-    setGreeting(h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
-    setDateLabel(now.toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" }));
-    setDayKey(key);
-    setInsightRevealed(window.localStorage.getItem(`lifeos-insight-${key}`) === "revealed");
+    try {
+      const now = new Date();
+      const h = now.getHours();
+      const key = now.toISOString().slice(0, 10);
+      setGreeting(h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
+      setDateLabel(now.toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" }));
+      setDayKey(key);
+      setInsightRevealed(window.localStorage.getItem(`lifeos-insight-${key}`) === "revealed");
+    } catch {
+      setGreeting("Welcome");
+      setDateLabel("Today");
+    }
   }, []);
 
   const { data: profile } = useQuery({
@@ -179,11 +200,12 @@ export default function DashboardPage() {
 
   const firstName = String(profile?.full_name || profile?.name || "").split(" ")[0] || "there";
   const lifeScore = typeof scoreData?.score === "number" ? scoreData.score : 0;
-  const todayTasks = (homescreen?.today.tasks ?? []) as TaskItem[];
-  const todayHabits = (homescreen?.today.habits ?? []) as HabitItem[];
-  const fixedItems = (homescreen?.today.non_movable ?? []) as FixedItem[];
-  const totalTasks = homescreen ? homescreen.today.tasks.length + homescreen.this_week.tasks.length : 0;
-  const domainEntries = Object.entries(domainScores ?? {});
+  const todayTasks = asArray<TaskItem>(homescreen?.today?.tasks).filter(validTask);
+  const todayHabits = asArray<HabitItem>(homescreen?.today?.habits).filter(validHabit);
+  const fixedItems = asArray<FixedItem>(homescreen?.today?.non_movable).filter(validFixedItem);
+  const weekTasks = asArray<TaskItem>(homescreen?.this_week?.tasks).filter(validTask);
+  const totalTasks = todayTasks.length + weekTasks.length;
+  const domainEntries = Object.entries(domainScores ?? {}).filter((entry): entry is [string, number] => typeof entry[1] === "number");
   const topDomain = domainEntries.sort((a, b) => b[1] - a[1])[0];
   const quietDomain = Object.entries(domainScores ?? {}).sort((a, b) => a[1] - b[1])[0];
   const topDomainMeta = DOMAINS.find(d => d.id === topDomain?.[0]);
@@ -248,7 +270,11 @@ export default function DashboardPage() {
 
   function revealInsight() {
     setInsightRevealed(true);
-    if (dayKey) window.localStorage.setItem(`lifeos-insight-${dayKey}`, "revealed");
+    try {
+      if (dayKey) window.localStorage.setItem(`lifeos-insight-${dayKey}`, "revealed");
+    } catch {
+      // Local storage is optional; the interaction should still work.
+    }
   }
 
   function applySuggestedTuning() {
@@ -262,18 +288,54 @@ export default function DashboardPage() {
   }
 
   function openQuickCapture() {
-    window.dispatchEvent(new Event("lifeos-open-quick-capture"));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("lifeos-open-quick-capture"));
+    }
   }
 
   function getTabData() {
-    if (!homescreen) return { tasks: [], goals: [], non_movable: [], habits: [], coaching_question: "" };
-    if (tab === "TODAY") return { ...homescreen.today, goals: [] };
-    if (tab === "THIS WEEK") return { ...homescreen.this_week, non_movable: [], habits: [], coaching_question: "" };
-    if (tab === "THIS MONTH") return { ...homescreen.this_month, non_movable: [], habits: [], coaching_question: "" };
-    return { ...homescreen.this_year, non_movable: [], habits: [], coaching_question: "" };
+    if (tab === "TODAY") {
+      return {
+        tasks: todayTasks,
+        goals: [],
+        non_movable: fixedItems,
+        habits: todayHabits,
+        coaching_question: homescreen?.today?.coaching_question || "",
+      };
+    }
+    if (tab === "THIS WEEK") {
+      return {
+        tasks: weekTasks,
+        goals: asArray(homescreen?.this_week?.goals),
+        non_movable: [],
+        habits: [],
+        coaching_question: "",
+      };
+    }
+    if (tab === "THIS MONTH") {
+      return {
+        tasks: asArray(homescreen?.this_month?.tasks),
+        goals: asArray(homescreen?.this_month?.goals),
+        non_movable: [],
+        habits: [],
+        coaching_question: "",
+      };
+    }
+    return {
+      tasks: asArray(homescreen?.this_year?.tasks),
+      goals: asArray(homescreen?.this_year?.goals),
+      non_movable: [],
+      habits: [],
+      coaching_question: "",
+      life_score_note: homescreen?.this_year?.life_score_note || "",
+    };
   }
 
   const tabData = getTabData();
+  const tabTasks = asArray<TaskItem>(tabData.tasks).filter(validTask);
+  const tabGoals = asArray<{ title?: string; domain?: string; current_value?: number; target_value?: number }>(tabData.goals).filter(goal => Boolean(goal?.title));
+  const tabFixedItems = asArray<FixedItem>(tabData.non_movable).filter(validFixedItem);
+  const tabHabits = asArray<HabitItem>(tabData.habits).filter(validHabit);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-4 md:px-8 md:py-2">
@@ -512,10 +574,10 @@ export default function DashboardPage() {
 
           {!hsLoading && (
             <>
-              {tab === "TODAY" && (tabData as { non_movable: { id: string; title: string }[] }).non_movable?.length > 0 && (
+              {tab === "TODAY" && tabFixedItems.length > 0 && (
                 <div className="mb-4">
                   <h3 className="metric-label mb-2 text-red-500">Fixed Events</h3>
-                  {(tabData as any).non_movable.map((item: { id: string; title: string }) => (
+                  {tabFixedItems.map(item => (
                     <div key={item.id} className="flex items-center gap-2 py-1 text-sm">
                       <Calendar className="h-3.5 w-3.5 text-red-400" />
                       <span className="font-semibold text-slate-800">{item.title}</span>
@@ -524,19 +586,19 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {(tabData.tasks as { id: string; title: string; domain?: string; priority?: string }[])?.length > 0 && (
+              {tabTasks.length > 0 && (
                 <div className="mb-4">
                   <h3 className="metric-label mb-2">{tab === "TODAY" ? "Top Tasks" : "Tasks"}</h3>
-                  {(tabData.tasks as { id: string; title: string; domain?: string; priority?: string }[]).slice(0, 7).map(task => (
+                  {tabTasks.slice(0, 7).map(task => (
                     <TaskRow key={task.id} task={task} onComplete={id => completeMutation.mutate(id)} />
                   ))}
                 </div>
               )}
 
-              {(tabData.goals as { title: string; domain?: string; current_value?: number; target_value?: number }[])?.length > 0 && (
+              {tabGoals.length > 0 && (
                 <div className="mb-4">
                   <h3 className="metric-label mb-2">Goals</h3>
-                  {(tabData.goals as { title: string; domain?: string; current_value?: number; target_value?: number }[]).slice(0, 5).map((goal, i) => (
+                  {tabGoals.slice(0, 5).map((goal, i) => (
                     <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-slate-50">
                       <Target className="h-4 w-4 flex-shrink-0 text-primary" />
                       <div className="flex-1">
@@ -556,10 +618,10 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {tab === "TODAY" && (tabData as any).habits?.length > 0 && (
+              {tab === "TODAY" && tabHabits.length > 0 && (
                 <div className="mb-4">
                   <h3 className="metric-label mb-2">Habits Due</h3>
-                  {(tabData as any).habits.slice(0, 5).map((h: { id: string; name: string }) => (
+                  {tabHabits.slice(0, 5).map(h => (
                     <div key={h.id} className="flex items-center gap-2 py-1 text-sm font-medium text-slate-700">
                       <CheckCircle className="h-4 w-4 text-emerald-400" />
                       {h.name}
@@ -568,17 +630,17 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {tab === "TODAY" && (tabData as any).coaching_question && (
+              {tab === "TODAY" && tabData.coaching_question && (
                 <div className="rounded-2xl bg-blue-50 p-4 text-sm font-medium text-blue-800">
-                  {(tabData as any).coaching_question}
+                  {tabData.coaching_question}
                 </div>
               )}
 
-              {tab === "THIS YEAR" && (tabData as any).life_score_note && (
-                <p className="mt-2 text-xs text-slate-400">{(tabData as any).life_score_note}</p>
+              {tab === "THIS YEAR" && "life_score_note" in tabData && tabData.life_score_note && (
+                <p className="mt-2 text-xs text-slate-400">{tabData.life_score_note}</p>
               )}
 
-              {!tabData.tasks?.length && !tabData.goals?.length && (
+              {!tabTasks.length && !tabGoals.length && (
                 <div className="py-8 text-center text-sm text-slate-400">
                   Nothing planned for {tab.toLowerCase()}. Add tasks from the Kanban board.
                 </div>
