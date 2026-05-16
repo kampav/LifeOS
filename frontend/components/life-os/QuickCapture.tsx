@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,6 +28,14 @@ export function QuickCapture() {
   });
   const selectedDomain = watch("domain");
   const domain = DOMAINS.find(d => d.id === selectedDomain);
+
+  useEffect(() => {
+    function openCapture() {
+      setOpen(true);
+    }
+    window.addEventListener("lifeos-open-quick-capture", openCapture);
+    return () => window.removeEventListener("lifeos-open-quick-capture", openCapture);
+  }, []);
 
   async function onSubmit(data: Fields) {
     await entriesApi.create(data);

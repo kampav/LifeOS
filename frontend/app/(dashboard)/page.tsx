@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { usersApi, domainsApi, aiApi, api } from "@/lib/api";
+import { usersApi, domainsApi, aiApi, api, personalisationApi } from "@/lib/api";
 import { DOMAINS } from "@/lib/utils";
 import { DomainCard } from "@/components/life-os/DomainCard";
 import { QuickCapture } from "@/components/life-os/QuickCapture";
@@ -12,10 +13,17 @@ import {
   Calendar,
   CheckCircle,
   Clock3,
+  Compass,
+  Flame,
+  Gift,
+  Gauge,
   Layers3,
   RefreshCw,
+  ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Target,
+  Zap,
 } from "lucide-react";
 
 const LifeScore = dynamic(
@@ -43,6 +51,24 @@ interface HomescreenData {
   from_cache?: boolean;
 }
 
+interface LearningResponse {
+  most_engaged_domain: string;
+  least_engaged_domain: string;
+  suggested_tone: number;
+  suggested_detail_level: number;
+  suggested_domain_weights: Record<string, number>;
+  confidence: "low" | "medium" | "high";
+  sample_size: number;
+}
+
+type TaskItem = { id: string; title: string; domain?: string; priority?: string };
+type HabitItem = { id: string; name: string; domain?: string };
+type FixedItem = { id: string; title: string };
+type NextAction =
+  | { kind: "link"; label: string; reason: string; cta: string; href: string }
+  | { kind: "task"; label: string; reason: string; cta: string; taskId: string }
+  | { kind: "capture"; label: string; reason: string; cta: string };
+
 function TaskRow({
   task,
   onComplete,
@@ -63,17 +89,35 @@ function TaskRow({
   );
 }
 
+function scoreCopy(score: number) {
+  if (score >= 80) return "Protect the system that is working.";
+  if (score >= 60) return "Good base. One focused action compounds today.";
+  if (score >= 40) return "Choose a small win. Momentum matters more than volume.";
+  return "Make the next step tiny enough to do now.";
+}
+
+function stableIndex(seed: string, length: number) {
+  if (length <= 1) return 0;
+  return seed.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % length;
+}
+
 export default function DashboardPage() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("TODAY");
   const [showChat, setShowChat] = useState(false);
   const [greeting, setGreeting] = useState("Welcome");
   const [dateLabel, setDateLabel] = useState("");
+  const [dayKey, setDayKey] = useState("");
+  const [insightRevealed, setInsightRevealed] = useState(false);
 
   useEffect(() => {
-    const h = new Date().getHours();
+    const now = new Date();
+    const h = now.getHours();
+    const key = now.toISOString().slice(0, 10);
     setGreeting(h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
-    setDateLabel(new Date().toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" }));
+    setDateLabel(now.toLocaleDateString("en-GB", { weekday: "long", month: "long", day: "numeric" }));
+    setDayKey(key);
+    setInsightRevealed(window.localStorage.getItem(`lifeos-insight-${key}`) === "revealed");
   }, []);
 
   const { data: profile } = useQuery({
@@ -113,15 +157,113 @@ export default function DashboardPage() {
     staleTime: 300_000,
   });
 
+  const { data: learning } = useQuery<LearningResponse>({
+    queryKey: ["personalisation-learning"],
+    queryFn: () => personalisationApi.learning().then(r => r.data),
+    retry: false,
+    staleTime: 300_000,
+  });
+
   const completeMutation = useMutation({
     mutationFn: (id: string) => api.post(`/homescreen/items/${id}/complete`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["homescreen"] }),
   });
 
+  const tuneMutation = useMutation({
+    mutationFn: (payload: Record<string, unknown>) => personalisationApi.patch(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["personalisation"] });
+      qc.invalidateQueries({ queryKey: ["personalisation-learning"] });
+    },
+  });
+
   const firstName = String(profile?.full_name || profile?.name || "").split(" ")[0] || "there";
   const lifeScore = typeof scoreData?.score === "number" ? scoreData.score : 0;
+  const todayTasks = (homescreen?.today.tasks ?? []) as TaskItem[];
+  const todayHabits = (homescreen?.today.habits ?? []) as HabitItem[];
+  const fixedItems = (homescreen?.today.non_movable ?? []) as FixedItem[];
   const totalTasks = homescreen ? homescreen.today.tasks.length + homescreen.this_week.tasks.length : 0;
-  const topDomain = Object.entries(domainScores ?? {}).sort((a, b) => b[1] - a[1])[0];
+  const domainEntries = Object.entries(domainScores ?? {});
+  const topDomain = domainEntries.sort((a, b) => b[1] - a[1])[0];
+  const quietDomain = Object.entries(domainScores ?? {}).sort((a, b) => a[1] - b[1])[0];
+  const topDomainMeta = DOMAINS.find(d => d.id === topDomain?.[0]);
+  const quietDomainMeta = DOMAINS.find(d => d.id === quietDomain?.[0]);
+  const momentumTotal = fixedItems.length + todayTasks.length + todayHabits.length;
+  const momentumScore = Math.min(100, Math.max(12, 100 - momentumTotal * 9));
+
+  const nextAction: NextAction = fixedItems[0]
+    ? {
+        kind: "link",
+        label: fixedItems[0].title,
+        reason: "Fixed commitment is the strongest trigger because it has a real-world time anchor.",
+        cta: "Open planner",
+        href: "/planner",
+      }
+    : todayTasks[0]
+      ? {
+          kind: "task",
+          label: todayTasks[0].title,
+          reason: "This is the lowest-friction action already waiting in your system.",
+          cta: "Complete it",
+          taskId: todayTasks[0].id,
+        }
+      : todayHabits[0]
+        ? {
+            kind: "link",
+            label: todayHabits[0].name,
+            reason: "A small repeated behaviour protects the habit loop.",
+            cta: "Open habits",
+            href: "/habits",
+          }
+        : {
+            kind: "capture",
+            label: quietDomainMeta ? `Add one signal for ${quietDomainMeta.label}` : "Capture one useful signal",
+            reason: "Life OS gets smarter when every quiet domain receives a lightweight update.",
+            cta: "Quick capture",
+          };
+
+  const rewardCards = [
+    {
+      title: topDomainMeta ? `${topDomainMeta.label} is carrying momentum` : "Your strongest signal is emerging",
+      body: topDomainMeta
+        ? `Your current pattern points to ${topDomainMeta.label}. Protect it with one deliberate action today.`
+        : "Life OS will surface stronger behavioural patterns as you capture more signal.",
+    },
+    {
+      title: quietDomainMeta ? `${quietDomainMeta.label} is your blind spot` : "A quiet domain needs attention",
+      body: quietDomainMeta
+        ? `One tiny update in ${quietDomainMeta.label} will improve tomorrow's recommendations.`
+        : "A single log creates the next useful recommendation.",
+    },
+    {
+      title: "The smallest action wins",
+      body: scoreCopy(lifeScore),
+    },
+    {
+      title: "Your system learns from investment",
+      body: "Choosing what matters today gives Life OS a better signal than passively browsing the dashboard.",
+    },
+  ];
+  const reward = rewardCards[stableIndex(dayKey || firstName, rewardCards.length)];
+
+  function revealInsight() {
+    setInsightRevealed(true);
+    if (dayKey) window.localStorage.setItem(`lifeos-insight-${dayKey}`, "revealed");
+  }
+
+  function applySuggestedTuning() {
+    if (learning?.suggested_domain_weights) {
+      tuneMutation.mutate({
+        domain_weights: learning.suggested_domain_weights,
+        coach_tone: learning.suggested_tone,
+        detail_level: learning.suggested_detail_level,
+      });
+    }
+  }
+
+  function openQuickCapture() {
+    window.dispatchEvent(new Event("lifeos-open-quick-capture"));
+  }
 
   function getTabData() {
     if (!homescreen) return { tasks: [], goals: [], non_movable: [], habits: [], coaching_question: "" };
@@ -144,11 +286,18 @@ export default function DashboardPage() {
               <span suppressHydrationWarning>{dateLabel || "Today"}</span>
             </div>
             <h1 suppressHydrationWarning className="mt-4 max-w-2xl text-3xl font-black tracking-tight md:text-5xl">
-              {greeting}, {firstName}
+              {greeting}, {firstName}. Build one return loop today.
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
-              Your life cockpit is tuned for today: priorities, domains, plans, and coaching in one place.
+              Trigger, action, reward, investment. Life OS now guides the next useful behaviour instead of presenting a static dashboard.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {["Trigger", "Action", "Reward", "Investment"].map((step, index) => (
+                <span key={step} className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1 text-xs font-bold text-slate-200">
+                  {index + 1}. {step}
+                </span>
+              ))}
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[26rem]">
             <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4">
@@ -167,13 +316,155 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      <section className="mb-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="panel rounded-3xl p-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="metric-label">Next Best Action</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">{nextAction.label}</h2>
+            </div>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-700">
+              Guided
+            </span>
+          </div>
+          <p className="max-w-2xl text-sm leading-6 text-slate-600">{nextAction.reason}</p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {nextAction.kind === "task" ? (
+              <button
+                onClick={() => completeMutation.mutate(nextAction.taskId)}
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+              >
+                <CheckCircle className="h-4 w-4" />
+                {nextAction.cta}
+              </button>
+            ) : nextAction.kind === "link" ? (
+              <Link
+                href={nextAction.href}
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+              >
+                <ArrowUpRight className="h-4 w-4" />
+                {nextAction.cta}
+              </Link>
+            ) : (
+              <button
+                onClick={openQuickCapture}
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+              >
+                <Zap className="h-4 w-4" />
+                {nextAction.cta}
+              </button>
+            )}
+            <button
+              onClick={() => setShowChat(true)}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:border-slate-300"
+            >
+              <Brain className="h-4 w-4" />
+              Ask coach why
+            </button>
+          </div>
+        </div>
+
+        <div className="panel rounded-3xl p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="metric-label">Variable Reward</p>
+              <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950">Today's unlock</h2>
+            </div>
+            <Gift className="h-5 w-5 text-primary" />
+          </div>
+          <div className={`mt-4 rounded-2xl border p-4 transition ${insightRevealed ? "border-blue-100 bg-blue-50" : "border-slate-200 bg-slate-50"}`}>
+            {insightRevealed ? (
+              <>
+                <h3 className="font-black text-slate-950">{reward.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{reward.body}</p>
+              </>
+            ) : (
+              <>
+                <h3 className="font-black text-slate-950">One useful insight is waiting</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Reveal a small, behaviour-led recommendation for today. It changes as your data changes.
+                </p>
+              </>
+            )}
+          </div>
+          <button
+            onClick={revealInsight}
+            disabled={insightRevealed}
+            className="mt-4 w-full rounded-2xl bg-primary px-4 py-3 text-sm font-black text-white transition hover:bg-primary-dark disabled:bg-slate-200 disabled:text-slate-500"
+          >
+            {insightRevealed ? "Unlocked for today" : "Reveal today's insight"}
+          </button>
+        </div>
+      </section>
+
+      <section className="mb-6 grid gap-4 lg:grid-cols-3">
+        <div className="panel rounded-3xl p-5">
+          <div className="flex items-center gap-2">
+            <Flame className="h-4 w-4 text-orange-500" />
+            <p className="metric-label">Momentum</p>
+          </div>
+          <div className="mt-4 flex items-end gap-3">
+            <span className="text-5xl font-black tracking-tight text-slate-950">{momentumScore}</span>
+            <span className="pb-2 text-sm font-bold text-slate-400">readiness</span>
+          </div>
+          <div className="mt-4 h-2 rounded-full bg-slate-100">
+            <div className="h-2 rounded-full bg-orange-500 transition-all" style={{ width: `${momentumScore}%` }} />
+          </div>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Fewer unresolved commitments means more ability to act when the trigger appears.
+          </p>
+        </div>
+
+        <div className="panel rounded-3xl p-5">
+          <div className="flex items-center gap-2">
+            <Compass className="h-4 w-4 text-cyan-600" />
+            <p className="metric-label">Hunt</p>
+          </div>
+          <h3 className="mt-4 text-xl font-black text-slate-950">
+            {quietDomainMeta ? `Explore ${quietDomainMeta.label}` : "Find the next signal"}
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            The most useful discovery is usually hiding in the domain with the least recent signal.
+          </p>
+          <Link
+            href={quietDomainMeta ? `/${quietDomainMeta.id}` : "/more"}
+            className="mt-4 inline-flex items-center gap-2 text-sm font-black text-primary"
+          >
+            Open domain <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="panel rounded-3xl p-5">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-violet-600" />
+            <p className="metric-label">Investment</p>
+          </div>
+          <h3 className="mt-4 text-xl font-black text-slate-950">Teach Life OS what matters</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Every tuning choice makes tomorrow's recommendations more personal.
+          </p>
+          <button
+            onClick={applySuggestedTuning}
+            disabled={tuneMutation.isPending || !learning?.suggested_domain_weights}
+            className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800 disabled:opacity-50"
+          >
+            <Gauge className="h-4 w-4" />
+            Apply adaptive tuning
+          </button>
+        </div>
+      </section>
+
       {brief?.brief && (
         <section className="panel mb-6 rounded-3xl p-5">
           <div className="mb-2 flex items-center gap-2">
             <Brain className="h-4 w-4 text-primary" />
-            <span className="metric-label">Today's Brief</span>
+            <span className="metric-label">Contextual Trigger</span>
           </div>
           <p className="line-clamp-3 text-sm leading-relaxed text-slate-700">{String(brief.brief)}</p>
+          <div className="mt-4 flex items-center gap-2 text-xs font-bold text-slate-500">
+            <ShieldCheck className="h-4 w-4 text-emerald-500" />
+            Designed for useful return behaviour, not empty engagement.
+          </div>
         </section>
       )}
 
