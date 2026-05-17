@@ -28,6 +28,40 @@ def _task_lines(rows: list[dict], limit: int = 6) -> list[str]:
     return lines
 
 
+def _knowledge_lines(rows: list[dict], limit: int = 5) -> list[str]:
+    lines = []
+    for row in rows[:limit]:
+        tags = ", ".join(row.get("tags") or [])
+        suffix = f" tags:{tags}" if tags else ""
+        lines.append(
+            f"- {row.get('title', 'Untitled')} [{row.get('item_type', 'note')}/"
+            f"{row.get('para_area', 'resources')}] importance:{row.get('importance', 3)}{suffix}"
+        )
+    return lines
+
+
+def _learning_lines(rows: list[dict], limit: int = 5) -> list[str]:
+    lines = []
+    for row in rows[:limit]:
+        progress = row.get("progress_percent", 0)
+        lines.append(
+            f"- {row.get('title', 'Untitled')} [{row.get('resource_type', 'resource')}/"
+            f"{row.get('status', 'to_consume')}] progress:{progress}%"
+        )
+    return lines
+
+
+def _decision_lines(rows: list[dict], limit: int = 4) -> list[str]:
+    lines = []
+    for row in rows[:limit]:
+        review = row.get("review_at") or "no review"
+        lines.append(
+            f"- {row.get('title', 'Untitled')} [{row.get('status', 'open')}] "
+            f"reversible:{row.get('reversible', True)} review:{str(review)[:10]}"
+        )
+    return lines
+
+
 async def build_domain_context(user_id: str, domain: str, days: int = 7) -> str:
     """Compressed context for one domain. Max roughly 800 tokens."""
     sb = get_supabase()
@@ -74,6 +108,31 @@ async def build_domain_context(user_id: str, domain: str, days: int = 7) -> str:
         .eq("completed", False)
         .limit(8)
     )
+    knowledge = _safe_rows(
+        sb.table("knowledge_items")
+        .select("title,item_type,para_area,importance,tags,captured_at")
+        .eq("user_id", user_id)
+        .eq("domain", domain)
+        .neq("status", "archived")
+        .order("captured_at", desc=True)
+        .limit(6)
+    )
+    learning = _safe_rows(
+        sb.table("learning_resources")
+        .select("title,resource_type,status,progress_percent,domain,next_review_at")
+        .eq("user_id", user_id)
+        .eq("domain", domain)
+        .neq("status", "archived")
+        .limit(6)
+    )
+    decisions = _safe_rows(
+        sb.table("decision_records")
+        .select("title,status,reversible,review_at,domain")
+        .eq("user_id", user_id)
+        .eq("domain", domain)
+        .neq("status", "archived")
+        .limit(5)
+    )
 
     entry_lines = [
         f"- {e.get('logged_at', '')[:10]}: {e.get('title', '')} {e.get('value', '')}{e.get('unit', '')}"
@@ -97,6 +156,12 @@ KANBAN TASKS:
 {chr(10).join(_task_lines(tasks)) or 'None'}
 PLANNER:
 {chr(10).join(_task_lines(planner)) or 'None'}
+SECOND BRAIN:
+{chr(10).join(_knowledge_lines(knowledge)) or 'None'}
+LEARNING:
+{chr(10).join(_learning_lines(learning)) or 'None'}
+DECISIONS:
+{chr(10).join(_decision_lines(decisions)) or 'None'}
 RECENT {days}d ({len(entry_lines)} entries):
 {chr(10).join(entry_lines) or 'No entries'}""".strip()
 
@@ -118,14 +183,38 @@ async def build_operating_context(user_id: str) -> str:
         .eq("completed", False)
         .limit(12)
     )
+    knowledge = _safe_rows(
+        sb.table("knowledge_items")
+        .select("title,item_type,domain,para_area,importance,tags,captured_at")
+        .eq("user_id", user_id)
+        .neq("status", "archived")
+        .order("captured_at", desc=True)
+        .limit(8)
+    )
+    reviews = _safe_rows(
+        sb.table("life_reviews")
+        .select("review_type,period_start,period_end,status,wins,challenges,next_actions")
+        .eq("user_id", user_id)
+        .order("period_start", desc=True)
+        .limit(3)
+    )
     open_tasks = [t for t in tasks if t.get("status") not in ("done", "archived")]
     waiting = [t for t in tasks if t.get("status") == "waiting"]
+    review_lines = [
+        f"- {r.get('review_type', 'review')} {r.get('period_start')}..{r.get('period_end')} "
+        f"[{r.get('status', 'draft')}] next_actions:{len(r.get('next_actions') or [])}"
+        for r in reviews
+    ]
     return f"""[OPERATING CONTEXT]
 Open Kanban tasks: {len(open_tasks)}; waiting/blocked: {len(waiting)}; planner items: {len(planner)}.
 KANBAN:
 {chr(10).join(_task_lines(open_tasks, 8)) or 'None'}
 PLANNER:
-{chr(10).join(_task_lines(planner, 8)) or 'None'}""".strip()
+{chr(10).join(_task_lines(planner, 8)) or 'None'}
+RECENT KNOWLEDGE:
+{chr(10).join(_knowledge_lines(knowledge, 8)) or 'None'}
+LIFE REVIEWS:
+{chr(10).join(review_lines) or 'None'}""".strip()
 
 
 async def build_full_context(user_id: str, domains: list[str] | None = None) -> str:
