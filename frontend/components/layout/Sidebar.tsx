@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { DOMAINS } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, MessageCircle, Target, Activity, Settings, LogOut, Sparkles, CalendarDays, KanbanSquare } from "lucide-react";
+import { LayoutDashboard, MessageCircle, Target, Activity, Settings, LogOut, Sparkles, CalendarDays, KanbanSquare, User, ClipboardList } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -16,6 +16,7 @@ const NAV = [
   { href: "/planner", icon: CalendarDays, label: "Planner" },
   { href: "/kanban", icon: KanbanSquare, label: "Kanban" },
   { href: "/review", icon: Sparkles, label: "Reviews" },
+  { href: "/release-log", icon: ClipboardList, label: "Release log" },
 ];
 
 export function Sidebar() {
@@ -77,6 +78,9 @@ export function Sidebar() {
         <div className="px-1 pb-1">
           <ThemeToggle />
         </div>
+        <Link href="/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-white/55 hover:text-slate-950">
+          <User className="w-4 h-4" /> Profile
+        </Link>
         <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-white/55 hover:text-slate-950">
           <Settings className="w-4 h-4" /> Settings
         </Link>

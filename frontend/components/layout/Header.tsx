@@ -33,6 +33,10 @@ export function NotificationBell() {
     goal_reminder: "Goal",
     relationship_check: "Social",
     coach_insight: "Coach",
+    nudge: "Nudge",
+    life_inbox: "Inbox",
+    evening_reflection: "Reflect",
+    medication_reminder: "Health",
     system: "System",
   };
 

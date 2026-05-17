@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, MessageCircle, Target, Activity, Menu } from "lucide-react";
+import { LayoutDashboard, MessageCircle, User, Activity, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 const NAV = [
   { href: "/", icon: LayoutDashboard, label: "Home" },
   { href: "/coach", icon: MessageCircle, label: "Coach" },
-  { href: "/goals", icon: Target, label: "Goals" },
+  { href: "/profile", icon: User, label: "Profile" },
   { href: "/habits", icon: Activity, label: "Habits" },
   { href: "/more", icon: Menu, label: "More" },
 ];

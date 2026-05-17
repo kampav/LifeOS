@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { domainsApi, goalsApi } from "@/lib/api";
 import { getDomain } from "@/lib/utils";
+import { DOMAIN_CONTENT } from "@/lib/domainContent";
 import { MetricTile } from "./MetricTile";
 import { GoalProgress } from "./GoalProgress";
 import { EntryForm } from "./EntryForm";
@@ -65,8 +66,18 @@ export function DomainPage({ domainId, config = {} }: Props) {
     try { const d = parseISO(s as string); return isValid(d) ? format(d, "MMM d") : ""; } catch { return ""; }
   };
 
+  const recentEntries = Array.isArray(dash?.recent_entries) ? dash.recent_entries : [];
+  const habits = Array.isArray(dash?.habits) ? dash.habits : [];
+  const activeGoals = Array.isArray(goals) ? goals.filter((g: Record<string, unknown>) => g.status === "active") : [];
+  const content = DOMAIN_CONTENT[domainId] || {
+    outcome: "Keep this area visible, intentional and easy to act on.",
+    everyday: ["Tasks", "Goals", "Notes", "Events", "Habits"],
+    suggestedCaptures: ["Add note", "Create task", "Schedule time", "Save learning"],
+    nudge: "Choose one small action that makes this area clearer.",
+  };
+
   // Build chart data from recent entries
-  const chartData = (dash?.recent_entries || [])
+  const chartData = recentEntries
     .filter((e: Record<string, unknown>) => e.value != null)
     .slice(0, 14)
     .reverse()
@@ -79,26 +90,48 @@ export function DomainPage({ domainId, config = {} }: Props) {
   if (!domain) return null;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 md:px-6 py-6">
+    <div className="max-w-6xl mx-auto px-4 md:px-8 py-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: domain.color + "20" }}>
-            <span className="w-4 h-4 rounded-full" style={{ background: domain.color }} />
-          </div>
+      <section className="relative mb-6 overflow-hidden rounded-[2rem] p-6 text-white md:p-8" style={{ background: `linear-gradient(135deg, ${domain.color} 0%, #6C3AFF 100%)` }}>
+        <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/15 blur-3xl" />
+        <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{domain.label}</h1>
-            <p className="text-gray-400 text-sm">{dash?.entry_count_30d ?? 0} entries this month</p>
+            <div className="flex items-center gap-3">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/18">
+                <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>{domain.icon}</span>
+              </span>
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-white/60">Life area</p>
+                <h1 className="mt-1 text-4xl font-black tracking-tight">{domain.label}</h1>
+              </div>
+            </div>
+            <p className="mt-5 max-w-2xl text-base font-semibold leading-7 text-white/80">{content.outcome}</p>
+          </div>
+          <div className="rounded-[1.5rem] bg-white/16 p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-white/60">Today's nudge</p>
+            <p className="mt-2 max-w-xs text-sm font-bold leading-6">{content.nudge}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+      </section>
+
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="metric-label">Common things people manage here</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {content.everyday.map(item => (
+              <span key={item} className="rounded-full bg-[var(--md-surface-container-high)] px-3 py-1 text-xs font-black text-slate-600 shadow-sm ring-1 ring-[var(--md-outline)]">{item}</span>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
           <button onClick={() => setShowChat(s => !s)}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-colors ${showChat ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}>
             <MessageCircle className="w-4 h-4" />
             <span className="hidden sm:inline">Coach</span>
           </button>
           <button onClick={() => setShowForm(s => !s)}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium">
+            className="flex items-center gap-2 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg"
+            style={{ background: domain.color }}>
             <Plus className="w-4 h-4" /> Log
           </button>
         </div>
@@ -109,18 +142,33 @@ export function DomainPage({ domainId, config = {} }: Props) {
 
           {/* Score + Quick metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl p-5 shadow-card flex flex-col items-center justify-center">
+            <div className="panel rounded-2xl p-5 flex flex-col items-center justify-center">
               <p className="text-xs text-gray-400 mb-2">Score</p>
               <LifeScore score={dash?.score ?? 0} size="sm" />
             </div>
-            <MetricTile label="Goals Active" value={goals.filter((g: Record<string, unknown>) => g.status === "active").length} trend="flat" />
+            <MetricTile label="Goals Active" value={activeGoals.length} trend="flat" />
             <MetricTile label="Entries (30d)" value={dash?.entry_count_30d ?? 0} trend="flat" />
-            <MetricTile label="Habits" value={dash?.habits?.length ?? 0} trend="flat" />
+            <MetricTile label="Habits" value={habits.length} trend="flat" />
+          </div>
+
+          <div className="panel rounded-[1.5rem] p-5">
+            <h2 className="text-lg font-black text-slate-950">Quick captures</h2>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {content.suggestedCaptures.map(item => (
+                <button
+                  key={item}
+                  onClick={() => setShowForm(true)}
+                  className="rounded-2xl border border-[var(--md-outline)] bg-[var(--md-surface)] px-3 py-3 text-left text-sm font-bold text-slate-700 transition hover:-translate-y-0.5"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Entry form inline */}
           {showForm && (
-            <div className="bg-white rounded-2xl p-6 shadow-card">
+            <div className="panel rounded-2xl p-6">
               <EntryForm
                 domain={domainId}
                 onSuccess={() => { setShowForm(false); qc.invalidateQueries({ queryKey: ["domain-dashboard", domainId] }); }}
@@ -143,11 +191,11 @@ export function DomainPage({ domainId, config = {} }: Props) {
           ) : null}
 
           {/* Recent entries */}
-          {(dash?.recent_entries?.length ?? 0) > 0 && (
-            <div className="bg-white rounded-2xl p-5 shadow-card">
+          {recentEntries.length > 0 && (
+            <div className="panel rounded-2xl p-5">
               <h3 className="font-semibold text-gray-900 mb-4">Recent Entries</h3>
               <div className="space-y-2">
-                {dash.recent_entries.slice(0, 8).map((e: Record<string, unknown>) => (
+                {recentEntries.slice(0, 8).map((e: Record<string, unknown>) => (
                   <div key={e.id as string} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                     <div>
                       <p className="text-sm text-gray-800">{(e.title as string) || (e.entry_type as string)}</p>

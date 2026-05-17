@@ -5,6 +5,21 @@ Format: `[version] YYYY-MM-DD — Persona — Description`
 
 ---
 
+## [1.3.0] 2026-05-17 — Simpler LifeOS, Area Themes, Profile, Release Log
+
+### Added (Frontend)
+- **Release log in app:** `/release-log` shows user-facing product changes and is linked from desktop navigation.
+- **Profile page:** `/profile` lets users view/update profile basics and notification/nudge preferences.
+- **Area content model:** `frontend/lib/domainContent.ts` defines what each life area is for, common activities, useful captures, and a simple nudge.
+- **Domain page theme:** shared domain pages now render a colour-led hero, meaningful everyday activities, quick captures, and safer recent-entry handling.
+
+### Changed (Frontend)
+- **Navigation:** desktop sidebar now includes Profile and Release log; mobile nav includes Profile.
+- **Notifications:** notification bell recognises nudge, inbox, reflection, and medication reminder types.
+- **Crash resilience:** shared domain page now guards array-shaped API data before filtering/mapping.
+
+---
+
 ## [0.5.0] 2026-04-14 — Sprint 5: Multi-Agent + MCP + Personalisation
 
 ### Added (Backend)
