@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     MEM0_API_KEY: str = ""
     OLLAMA_BASE_URL: str = "http://localhost:11434"
 
+    # External integrations
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    GOOGLE_OAUTH_CLIENT_SECRET: str = ""
+    GOOGLE_OAUTH_REDIRECT_URI: str = ""
+
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 

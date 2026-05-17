@@ -114,6 +114,20 @@ async def _build_homescreen(user_id: str, sb) -> dict:
     )
     goals = goals_result.data or []
 
+    try:
+        inbox_result = (
+            sb.table("life_items")
+            .select("id,title,source_type,source_provider,item_kind,priority,created_at")
+            .eq("user_id", user_id)
+            .eq("status", "inbox")
+            .order("created_at", desc=True)
+            .limit(8)
+            .execute()
+        )
+        life_inbox = inbox_result.data or []
+    except Exception:
+        life_inbox = []
+
     non_movable_result = (
         sb.table("planner_items")
         .select("*")
@@ -135,6 +149,7 @@ async def _build_homescreen(user_id: str, sb) -> dict:
             "non_movable": non_movable,
             "tasks": today_items(work_items, weights),
             "habits": habits_today[:5],
+            "life_inbox": life_inbox,
             "coaching_question": "What's the one thing that would make today a win?",
         },
         "this_week": {
@@ -157,6 +172,7 @@ async def _build_homescreen(user_id: str, sb) -> dict:
             "task_count": len(tasks),
             "planner_count": len(planner_items),
             "agenda_count": len(upcoming_agenda),
+            "life_inbox_count": len(life_inbox),
             "linked_task_count": len([p for p in planner_items if p.get("task_id")]),
         },
         "generated_at": now.isoformat(),

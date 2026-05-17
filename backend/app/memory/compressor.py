@@ -108,6 +108,15 @@ async def build_domain_context(user_id: str, domain: str, days: int = 7) -> str:
         .eq("completed", False)
         .limit(8)
     )
+    life_inbox = _safe_rows(
+        sb.table("life_items")
+        .select("title,source_type,source_provider,item_kind,priority,created_at")
+        .eq("user_id", user_id)
+        .eq("status", "inbox")
+        .eq("domain", domain)
+        .order("created_at", desc=True)
+        .limit(5)
+    )
     knowledge = _safe_rows(
         sb.table("knowledge_items")
         .select("title,item_type,para_area,importance,tags,captured_at")
@@ -156,6 +165,8 @@ KANBAN TASKS:
 {chr(10).join(_task_lines(tasks)) or 'None'}
 PLANNER:
 {chr(10).join(_task_lines(planner)) or 'None'}
+LIFE INBOX:
+{chr(10).join(_task_lines(life_inbox)) or 'None'}
 SECOND BRAIN:
 {chr(10).join(_knowledge_lines(knowledge)) or 'None'}
 LEARNING:
@@ -182,6 +193,14 @@ async def build_operating_context(user_id: str) -> str:
         .eq("user_id", user_id)
         .eq("completed", False)
         .limit(12)
+    )
+    life_inbox = _safe_rows(
+        sb.table("life_items")
+        .select("title,source_type,source_provider,item_kind,priority,created_at")
+        .eq("user_id", user_id)
+        .eq("status", "inbox")
+        .order("created_at", desc=True)
+        .limit(8)
     )
     knowledge = _safe_rows(
         sb.table("knowledge_items")
@@ -211,6 +230,8 @@ KANBAN:
 {chr(10).join(_task_lines(open_tasks, 8)) or 'None'}
 PLANNER:
 {chr(10).join(_task_lines(planner, 8)) or 'None'}
+LIFE INBOX:
+{chr(10).join(_task_lines(life_inbox, 8)) or 'None'}
 RECENT KNOWLEDGE:
 {chr(10).join(_knowledge_lines(knowledge, 8)) or 'None'}
 LIFE REVIEWS:
