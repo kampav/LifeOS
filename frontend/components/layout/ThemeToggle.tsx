@@ -44,7 +44,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
         </span>
       )}
       <span
-        className={`grid h-8 w-8 place-items-center rounded-full bg-[linear-gradient(135deg,#1787FF,#64B5FF)] text-white shadow-lg shadow-blue-500/30 transition-transform dark:bg-[linear-gradient(135deg,#FFC558,#FF6A4A)] dark:text-slate-950 ${
+        className={`grid h-8 w-8 place-items-center rounded-full bg-[var(--md-primary)] text-white shadow-lg shadow-blue-500/30 transition-transform dark:bg-[var(--md-secondary)] dark:text-slate-950 ${
           isDark ? "translate-x-0" : compact ? "translate-x-6" : "translate-x-0"
         }`}
       >

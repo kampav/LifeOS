@@ -20,7 +20,7 @@ export function DomainCard({ domainId, score, entryCount = 0, trend = "flat" }: 
   return (
     <Link href={`/${domainId}`}>
       <div className="group panel glass-shine rounded-[1.6rem] p-4 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-card-hover">
-        <div className="absolute inset-x-4 top-0 h-1 rounded-full opacity-70 transition group-hover:opacity-100" style={{ background: `linear-gradient(90deg, ${domain.color}, rgba(255,255,255,0.3))` }} />
+        <div className="absolute inset-x-4 top-0 h-1 rounded-full opacity-80 transition group-hover:opacity-100" style={{ background: domain.color }} />
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
@@ -41,7 +41,7 @@ export function DomainCard({ domainId, score, entryCount = 0, trend = "flat" }: 
             </span>
           </div>
           <div className="h-2 bg-white/55 rounded-full overflow-hidden shadow-inner">
-            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, background: `linear-gradient(90deg, ${domain.color}, ${domain.color}99)` }} />
+            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, background: domain.color }} />
           </div>
         </div>
 

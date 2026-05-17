@@ -50,10 +50,10 @@
   --md-on-surface-variant: #4B5568;
   --md-outline: rgba(11, 8, 32, 0.10);
   --md-shadow: rgba(12, 40, 118, 0.22);
-  --md-aurora-a: rgba(23, 135, 255, 0.72);
-  --md-aurora-b: rgba(67, 91, 255, 0.56);
-  --md-aurora-c: rgba(255, 106, 74, 0.30);
-  --md-aurora-d: rgba(255, 197, 88, 0.38);
+  --md-aurora-a: rgba(23, 135, 255, 0.62);
+  --md-aurora-b: rgba(100, 181, 255, 0.34);
+  --md-aurora-c: rgba(217, 236, 255, 0.58);
+  --md-aurora-d: rgba(255, 255, 255, 0.34);
 }
 
 html.dark {
@@ -73,8 +73,8 @@ html.dark {
   --md-shadow: rgba(0, 0, 0, 0.42);
   --md-aurora-a: rgba(23, 135, 255, 0.76);
   --md-aurora-b: rgba(67, 91, 255, 0.68);
-  --md-aurora-c: rgba(240, 77, 222, 0.32);
-  --md-aurora-d: rgba(200, 255, 77, 0.22);
+  --md-aurora-c: rgba(53, 160, 255, 0.28);
+  --md-aurora-d: rgba(216, 231, 255, 0.18);
 }
 
 body {
@@ -83,8 +83,7 @@ body {
   background:
     radial-gradient(circle at 12% 8%, rgba(255,255,255,0.46), transparent 18%),
     radial-gradient(circle at 92% 16%, var(--md-aurora-b), transparent 24%),
-    radial-gradient(circle at 72% 88%, var(--md-aurora-c), transparent 26%),
-    linear-gradient(135deg, var(--app-blue) 0%, #2D70FF 48%, #5D46FF 100%);
+    linear-gradient(135deg, var(--app-blue) 0%, #2D70FF 58%, #356BFF 100%);
   background-attachment: fixed;
   color: var(--md-on-surface);
   transition: background 260ms ease, color 180ms ease;
@@ -101,10 +100,9 @@ body {
 
 .app-surface {
   background:
-    radial-gradient(circle at 16% 18%, rgba(255,255,255,0.28), transparent 20%),
-    radial-gradient(circle at 84% 18%, rgba(234,223,255,0.38), transparent 24%),
-    radial-gradient(circle at 74% 86%, rgba(255,197,88,0.26), transparent 30%),
-    linear-gradient(135deg, #24A0FF 0%, #2D69FF 45%, #5E43FF 100%);
+    radial-gradient(circle at 16% 18%, rgba(255,255,255,0.30), transparent 20%),
+    radial-gradient(circle at 82% 12%, rgba(217,236,255,0.34), transparent 24%),
+    linear-gradient(135deg, #24A0FF 0%, #217DFF 45%, #356BFF 100%);
   position: relative;
   isolation: isolate;
 }
@@ -116,7 +114,8 @@ body {
   z-index: -2;
   pointer-events: none;
   background:
-    conic-gradient(from 210deg at 24% 36%, rgba(255,255,255,0.44), var(--md-aurora-a), var(--md-aurora-b), var(--md-aurora-c), var(--md-aurora-d), rgba(255,255,255,0.44)),
+    radial-gradient(circle at 22% 28%, rgba(255,255,255,0.46), transparent 28%),
+    radial-gradient(circle at 72% 18%, var(--md-aurora-b), transparent 24%),
     linear-gradient(135deg, rgba(255,255,255,0.28), transparent 45%);
   filter: blur(34px) saturate(1.55);
   transform: translate3d(0, 0, 0);
@@ -140,7 +139,7 @@ body {
   overflow: hidden;
   background:
     linear-gradient(145deg, rgba(255,255,255,0.96), rgba(255,255,255,0.78)),
-    linear-gradient(35deg, rgba(255,197,88,0.12), rgba(100,181,255,0.16));
+    linear-gradient(35deg, color-mix(in srgb, var(--md-primary) 10%, transparent), transparent);
   border: 1px solid rgba(255, 255, 255, 0.74);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.98),
@@ -157,17 +156,15 @@ body {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(110deg, rgba(255,255,255,0.48), transparent 24%, transparent 72%, rgba(255,197,88,0.22)),
-    linear-gradient(180deg, rgba(100,181,255,0.12), transparent 42%);
+    linear-gradient(110deg, rgba(255,255,255,0.48), transparent 24%, transparent 72%, color-mix(in srgb, var(--md-primary) 14%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, var(--md-primary) 8%, transparent), transparent 42%);
   opacity: 0.95;
 }
 
 .panel-dark {
   background:
-    radial-gradient(circle at 78% 22%, rgba(200,255,77,0.22), transparent 18%),
     radial-gradient(circle at 18% 18%, rgba(100,181,255,0.42), transparent 24%),
-    linear-gradient(135deg, #0B0820 0%, #0E3E9F 48%, #1787FF 100%),
-    conic-gradient(from 165deg at 78% 20%, var(--app-sky), var(--app-blue), #F04DDE, var(--app-coral), var(--app-yellow), var(--app-sky));
+    linear-gradient(135deg, #0B0820 0%, #0E3E9F 52%, #1787FF 100%);
   border: 1px solid rgba(255, 255, 255, 0.20);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.22),
@@ -210,9 +207,8 @@ body {
 }
 
 .colour-rail {
-  background: linear-gradient(90deg, var(--app-coral), var(--app-yellow), var(--app-sky), var(--app-teal), var(--app-lavender), var(--app-lime));
-  background-size: 220% 100%;
-  animation: rail-shift 6s ease-in-out infinite alternate;
+  background: var(--md-primary);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--md-primary) 55%, transparent);
 }
 
 .swatch-pop {
@@ -222,7 +218,7 @@ body {
 }
 
 .action-blue {
-  background: linear-gradient(135deg, #1787FF, #075FE4);
+  background: var(--md-primary);
   color: white;
   box-shadow: 0 16px 32px rgba(23,135,255,0.32);
 }

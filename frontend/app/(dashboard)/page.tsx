@@ -686,7 +686,7 @@ export default function DashboardPage() {
               key={t}
               onClick={() => setTab(t)}
                 className={`-mb-px border-b-2 px-3 py-4 text-[11px] font-black tracking-wide transition sm:px-4 ${
-                tab === t ? "border-transparent bg-clip-text text-transparent [background-image:linear-gradient(90deg,#2563EB,#14B8A6,#EC4899)]" : "border-transparent text-slate-400 hover:text-slate-700"
+                tab === t ? "border-primary text-primary" : "border-transparent text-slate-400 hover:text-slate-700"
               }`}
             >
               {t}

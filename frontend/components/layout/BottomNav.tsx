@@ -24,7 +24,7 @@ export function BottomNav() {
         {NAV.map(({ href, icon: Icon, label }) => (
           <Link key={href} href={href}
             className={cn("flex-1 flex flex-col items-center gap-1 rounded-xl py-2.5 text-[11px] font-semibold transition-all",
-              pathname === href ? "bg-[linear-gradient(135deg,var(--md-primary),var(--md-secondary))] text-white shadow-lg shadow-blue-950/20" : "text-slate-500")}>
+              pathname === href ? "bg-[var(--md-primary)] text-white shadow-lg shadow-blue-950/20" : "text-slate-500")}>
             <Icon className="w-4 h-4" />
             <span>{label}</span>
           </Link>
