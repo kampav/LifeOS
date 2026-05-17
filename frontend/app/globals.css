@@ -1,72 +1,72 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #1787FF;
-  --color-primary-light: #EAF4FF;
-  --color-primary-dark: #075FE4;
+  --color-primary: #6C3AFF;
+  --color-primary-light: #E7DEFF;
+  --color-primary-dark: #5304E7;
 
-  --color-domain-health: #16A34A;
-  --color-domain-family: #D97706;
-  --color-domain-education: #2563EB;
-  --color-domain-social: #DB2777;
-  --color-domain-finance: #059669;
-  --color-domain-career: #1787FF;
-  --color-domain-growth: #EA580C;
+  --color-domain-health: #10B981;
+  --color-domain-family: #FF7F50;
+  --color-domain-education: #3B82F6;
+  --color-domain-social: #8B5CF6;
+  --color-domain-finance: #F59E0B;
+  --color-domain-career: #EC4899;
+  --color-domain-growth: #06B6D4;
   --color-domain-property: #255766;
-  --color-domain-holiday: #0891B2;
-  --color-domain-community: #7C3AED;
+  --color-domain-holiday: #14B8A6;
+  --color-domain-community: #EF4444;
 
   --shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 12px 32px rgba(15,23,42,0.08);
   --shadow-card-hover: 0 1px 2px rgba(15,23,42,0.06), 0 18px 44px rgba(15,23,42,0.12);
 
-  --font-family-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Google Sans", "Segoe UI", Roboto, sans-serif;
+  --font-family-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Google Sans", "Segoe UI", Roboto, sans-serif;
 }
 
 * { box-sizing: border-box; }
 
 :root {
-  --app-blue: #1787FF;
-  --app-coral: #EA580C;
-  --app-yellow: #D97706;
-  --app-sky: #2563EB;
+  --app-blue: #6C3AFF;
+  --app-coral: #FF7F50;
+  --app-yellow: #F59E0B;
+  --app-sky: #3B82F6;
   --app-teal: #255766;
-  --app-ink: #0B0820;
+  --app-ink: #0B1C30;
   --app-paper: #FFFFFF;
   --md-primary: var(--app-blue);
   --md-on-primary: #FFFFFF;
-  --md-primary-container: #D9ECFF;
-  --md-on-primary-container: #032C6B;
-  --md-secondary: var(--app-yellow);
+  --md-primary-container: #6C3AFF;
+  --md-on-primary-container: #FFFFFF;
+  --md-secondary: #8127CF;
   --md-tertiary: var(--app-coral);
-  --md-surface: #EEF5FF;
-  --md-surface-dim: #DCEBFF;
-  --md-surface-container: #F8FBFF;
+  --md-surface: #F8F9FF;
+  --md-surface-dim: #CBDCF5;
+  --md-surface-container: #E5EEFF;
   --md-surface-container-high: #FFFFFF;
-  --md-on-surface: #0B0820;
-  --md-on-surface-variant: #334155;
-  --md-outline: #C8D7EE;
-  --md-shadow: rgba(15, 23, 42, 0.10);
+  --md-on-surface: #0B1C30;
+  --md-on-surface-variant: #484456;
+  --md-outline: #CAC3D9;
+  --md-shadow: rgba(108, 58, 255, 0.10);
 }
 
 html.dark {
-  --md-primary: #64B5FF;
+  --md-primary: #CBBEFF;
   --md-on-primary: #FFFFFF;
-  --md-primary-container: #123D78;
-  --md-on-primary-container: #EAF4FF;
-  --md-secondary: #FBBF24;
-  --md-tertiary: #FB923C;
-  --md-surface: #07111F;
-  --md-surface-dim: #030712;
-  --md-surface-container: #101B2E;
-  --md-surface-container-high: #172338;
+  --md-primary-container: #6C3AFF;
+  --md-on-primary-container: #FFFFFF;
+  --md-secondary: #DDB7FF;
+  --md-tertiary: #FFB693;
+  --md-surface: #0B1020;
+  --md-surface-dim: #050815;
+  --md-surface-container: #161E33;
+  --md-surface-container-high: #213145;
   --md-on-surface: #FFFFFF;
   --md-on-surface-variant: #CBD5E1;
-  --md-outline: #334155;
+  --md-outline: #3D465C;
   --md-shadow: rgba(0, 0, 0, 0.42);
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Google Sans", "Segoe UI", Roboto, sans-serif;
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Google Sans", "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   background: var(--md-surface);
   color: var(--md-on-surface);
@@ -109,12 +109,38 @@ body {
   color: var(--md-on-surface);
 }
 
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.serif-italic {
+  font-family: "Instrument Serif", serif;
+  font-style: italic;
+}
+
+.vivid-gradient {
+  background: linear-gradient(135deg, #6C3AFF 0%, #A855F7 100%);
+}
+
 .panel::before {
   display: none;
 }
 
 .panel-dark {
-  background: var(--md-primary);
+  background: linear-gradient(135deg, #6C3AFF 0%, #5304E7 100%);
   border: 1px solid color-mix(in srgb, var(--md-primary) 76%, #ffffff);
   box-shadow:
     0 1px 2px rgba(15,23,42,0.08),

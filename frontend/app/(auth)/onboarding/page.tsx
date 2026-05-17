@@ -5,25 +5,44 @@ import { usersApi, privacyApi } from "@/lib/api";
 import { DOMAINS } from "@/lib/utils";
 import { CheckCircle, Shield } from "lucide-react";
 
-const STEPS = ["profile", "life-stage", "priorities", "consent", "done"] as const;
+const STEPS = ["welcome", "profile", "life-stage", "priorities", "consent", "done"] as const;
 
 const LIFE_STAGES = [
-  { id: "early_career", label: "Early Career", subtitle: "Building foundations, 20s-early 30s" },
-  { id: "established", label: "Established", subtitle: "Peak earning, family building, 30s-40s" },
-  { id: "peak", label: "Peak", subtitle: "Leadership, legacy, 40s-50s" },
-  { id: "transition", label: "Transition", subtitle: "Reinvention or pre-retirement" },
+  { id: "early_career", label: "Early career", subtitle: "Building foundations and rhythm" },
+  { id: "established", label: "Established", subtitle: "Family, leadership and assets" },
+  { id: "peak", label: "Peak", subtitle: "Scale, legacy and renewal" },
+  { id: "transition", label: "Transition", subtitle: "A new chapter or reinvention" },
 ];
 
 const REQUIRED_CONSENTS = [
-  { type: "health_data", label: "Health Data Processing", desc: "Allows Life OS to store and analyse your health appointments, medications, and screenings. Processed locally — never sent to cloud AI." },
-  { type: "financial_data", label: "Financial Data Processing", desc: "Allows Life OS to store and analyse your transactions, budgets, and net worth. Processed locally — never sent to cloud AI." },
-  { type: "ai_processing", label: "AI Coaching", desc: "Allows your AI coach to provide personalised insights using your journal entries, goals, and life data. Only de-identified summaries are sent to AI models." },
+  { type: "health_data", label: "Health data", desc: "Store and organise health appointments, medication and wellbeing signals." },
+  { type: "financial_data", label: "Financial data", desc: "Store budgets, assets, transactions and planning context." },
+  { type: "ai_processing", label: "AI coach", desc: "Use private summaries to help LifeOS recommend the next useful step." },
 ] as const;
+
+function StepDots({ step }: { step: number }) {
+  return (
+    <div className="flex justify-center gap-2">
+      {STEPS.map((s, i) => (
+        <span
+          key={s}
+          className={`h-2 rounded-full transition-all ${i === step ? "w-7 bg-primary" : i < step ? "w-2 bg-primary/60" : "w-2 bg-[var(--md-outline)]"}`}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [data, setData] = useState({ name: "", age: "", timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, life_stage: "", priorities: [] as string[] });
+  const [data, setData] = useState({
+    name: "",
+    age: "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    life_stage: "",
+    priorities: [] as string[],
+  });
   const [consents, setConsents] = useState<Record<string, boolean>>({
     health_data: false,
     financial_data: false,
@@ -37,13 +56,7 @@ export default function OnboardingPage() {
   async function finish() {
     setSaving(true);
     try {
-      // Grant required consents
-      await Promise.all(
-        REQUIRED_CONSENTS
-          .filter(c => consents[c.type])
-          .map(c => privacyApi.grant(c.type))
-      );
-
+      await Promise.all(REQUIRED_CONSENTS.filter(c => consents[c.type]).map(c => privacyApi.grant(c.type)));
       await usersApi.onboarding({
         name: data.name,
         age: parseInt(data.age) || undefined,
@@ -52,7 +65,9 @@ export default function OnboardingPage() {
         declared_priorities: data.priorities,
       });
       router.push("/");
-    } catch { setSaving(false); }
+    } catch {
+      setSaving(false);
+    }
   }
 
   function togglePriority(id: string) {
@@ -65,159 +80,215 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center px-4">
-      <div className="w-full max-w-lg">
-        {/* Progress */}
-        <div className="flex gap-2 mb-8">
-          {STEPS.map((s, i) => (
-            <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${i <= step ? "bg-primary" : "bg-gray-200"}`} />
-          ))}
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-card p-8">
-          {currentStep === "profile" && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Welcome! Let's set up your profile</h2>
-                <p className="text-gray-500 mt-1">This helps your AI coach personalise everything for you.</p>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Your name</label>
-                  <input value={data.name} onChange={e => setData(d => ({ ...d, name: e.target.value }))}
-                    placeholder="Alex" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-                  <input value={data.age} onChange={e => setData(d => ({ ...d, age: e.target.value }))}
-                    type="number" placeholder="35" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                </div>
-              </div>
-              <button onClick={() => setStep(s => s + 1)} disabled={!data.name}
-                className="w-full bg-primary text-white rounded-xl py-3 font-medium disabled:opacity-50">Continue</button>
-            </div>
-          )}
-
-          {currentStep === "life-stage" && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">What stage of life are you in?</h2>
-                <p className="text-gray-500 mt-1">Your coach will tailor advice to your season of life.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {LIFE_STAGES.map(ls => (
-                  <button key={ls.id} onClick={() => setData(d => ({ ...d, life_stage: ls.id }))}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${data.life_stage === ls.id ? "border-primary bg-primary/5" : "border-gray-100 hover:border-gray-200"}`}>
-                    <div className="font-semibold text-gray-900 text-sm">{ls.label}</div>
-                    <div className="text-xs text-gray-500 mt-1">{ls.subtitle}</div>
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => setStep(s => s - 1)} className="flex-1 border border-gray-200 rounded-xl py-3 text-sm">Back</button>
-                <button onClick={() => setStep(s => s + 1)} disabled={!data.life_stage}
-                  className="flex-1 bg-primary text-white rounded-xl py-3 font-medium disabled:opacity-50">Continue</button>
-              </div>
-            </div>
-          )}
-
-          {currentStep === "priorities" && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Pick your top 3 priorities</h2>
-                <p className="text-gray-500 mt-1">These domains get extra weight in your Life Score.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {DOMAINS.map(d => (
-                  <button key={d.id} onClick={() => togglePriority(d.id)}
-                    className={`p-3 rounded-xl border-2 text-left flex items-center gap-2 transition-all ${data.priorities.includes(d.id) ? "border-primary bg-primary/5" : "border-gray-100 hover:border-gray-200"}`}>
-                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: d.color }} />
-                    <span className="text-sm font-medium text-gray-900">{d.label}</span>
-                    {data.priorities.includes(d.id) && <span className="ml-auto text-primary text-xs font-bold">#{data.priorities.indexOf(d.id) + 1}</span>}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => setStep(s => s - 1)} className="flex-1 border border-gray-200 rounded-xl py-3 text-sm">Back</button>
-                <button onClick={() => setStep(s => s + 1)} disabled={data.priorities.length === 0}
-                  className="flex-1 bg-primary text-white rounded-xl py-3 font-medium disabled:opacity-50">Continue</button>
-              </div>
-            </div>
-          )}
-
-          {currentStep === "consent" && (
-            <div className="space-y-6">
+    <main className="min-h-screen overflow-hidden bg-[var(--md-surface)] text-[var(--md-on-surface)]">
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-5 py-6 md:px-10">
+        <div className="grid overflow-hidden rounded-[2rem] border border-[var(--md-outline)] bg-[var(--md-surface-container-high)] shadow-2xl shadow-primary/10 md:min-h-[760px] md:grid-cols-[0.95fr_1.05fr]">
+          <section className="vivid-gradient relative flex min-h-[340px] flex-col justify-between overflow-hidden p-7 text-white md:p-10">
+            <div className="absolute -right-20 -top-24 h-80 w-80 rounded-full bg-white/15 blur-3xl" />
+            <div className="absolute -bottom-16 -left-20 h-72 w-72 rounded-full bg-[#CBBEFF]/25 blur-3xl" />
+            <div className="relative z-10 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Shield className="w-6 h-6 text-indigo-500 flex-shrink-0" />
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/20 shadow-lg shadow-purple-950/10">
+                  <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Data & Privacy</h2>
-                  <p className="text-gray-500 text-sm mt-0.5">Life OS needs your consent to process certain types of data.</p>
+                  <p className="text-sm font-extrabold leading-none">Life OS</p>
+                  <p className="mt-1 text-xs font-semibold text-white/70">One inbox for life</p>
                 </div>
               </div>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold">Private beta</span>
+            </div>
 
-              <div className="space-y-3">
-                {REQUIRED_CONSENTS.map(c => (
-                  <button
-                    key={c.type}
-                    onClick={() => setConsents(prev => ({ ...prev, [c.type]: !prev[c.type] }))}
-                    className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 ${consents[c.type] ? "border-indigo-500 bg-indigo-50" : "border-gray-200 hover:border-gray-300"}`}
-                  >
-                    <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${consents[c.type] ? "bg-indigo-500 border-indigo-500" : "border-gray-300"}`}>
-                      {consents[c.type] && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+            <div className="relative z-10 max-w-md">
+              <p className="mb-4 text-sm font-bold uppercase tracking-[0.18em] text-white/60">Capture. Decide. Act.</p>
+              <h1 className="serif-italic text-[48px] leading-[0.98] md:text-[64px]">
+                Your life deserves a system.
+              </h1>
+              <p className="mt-5 max-w-sm text-base font-medium leading-7 text-white/78">
+                Email, calendar, goals, tasks and second brain should collapse into one calm daily flow.
+              </p>
+            </div>
+
+            <div className="relative z-10 grid grid-cols-3 gap-2">
+              {["Do", "Schedule", "Remember"].map(label => (
+                <div key={label} className="rounded-2xl bg-white/16 p-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-white/60">Decision</p>
+                  <p className="mt-1 text-sm font-extrabold">{label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="flex flex-col p-6 md:p-10">
+            <StepDots step={step} />
+
+            <div className="flex flex-1 flex-col justify-center py-8">
+              {currentStep === "welcome" && (
+                <div className="mx-auto max-w-md text-center">
+                  <div className="mx-auto mb-8 grid h-24 w-24 place-items-center rounded-[2rem] bg-primary text-white shadow-2xl shadow-primary/25">
+                    <span className="material-symbols-outlined text-6xl" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                  </div>
+                  <h2 className="text-3xl font-extrabold tracking-tight md:text-4xl">Set up your one-stop LifeOS</h2>
+                  <p className="mt-4 text-base leading-7 text-[var(--md-on-surface-variant)]">
+                    We will start simple: what matters, what season you are in, and what data LifeOS may use.
+                  </p>
+                  <button onClick={() => setStep(1)} className="mt-8 h-14 w-full rounded-2xl bg-primary text-sm font-extrabold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5">
+                    Get started
+                  </button>
+                </div>
+              )}
+
+              {currentStep === "profile" && (
+                <div className="mx-auto w-full max-w-md space-y-6">
+                  <div>
+                    <h2 className="text-3xl font-extrabold tracking-tight">What should LifeOS call you?</h2>
+                    <p className="mt-2 text-[var(--md-on-surface-variant)]">This keeps the coach and daily flow personal.</p>
+                  </div>
+                  <div className="space-y-4">
+                    <input
+                      value={data.name}
+                      onChange={e => setData(d => ({ ...d, name: e.target.value }))}
+                      placeholder="Pav"
+                      className="h-14 w-full rounded-2xl border border-[var(--md-outline)] bg-[var(--md-surface)] px-4 text-sm font-semibold outline-none ring-primary/20 transition focus:ring-4"
+                    />
+                    <input
+                      value={data.age}
+                      onChange={e => setData(d => ({ ...d, age: e.target.value }))}
+                      type="number"
+                      placeholder="Age"
+                      className="h-14 w-full rounded-2xl border border-[var(--md-outline)] bg-[var(--md-surface)] px-4 text-sm font-semibold outline-none ring-primary/20 transition focus:ring-4"
+                    />
+                  </div>
+                  <button onClick={() => setStep(2)} disabled={!data.name} className="h-14 w-full rounded-2xl bg-primary text-sm font-extrabold text-white shadow-lg shadow-primary/25 disabled:opacity-40">
+                    Continue
+                  </button>
+                </div>
+              )}
+
+              {currentStep === "life-stage" && (
+                <div className="mx-auto w-full max-w-xl space-y-6">
+                  <div className="text-center">
+                    <h2 className="text-3xl font-extrabold tracking-tight">What season are you in?</h2>
+                    <p className="mt-2 text-[var(--md-on-surface-variant)]">LifeOS uses this to reduce noise and surface better defaults.</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {LIFE_STAGES.map(ls => (
+                      <button
+                        key={ls.id}
+                        onClick={() => setData(d => ({ ...d, life_stage: ls.id }))}
+                        className={`rounded-[1.25rem] border-2 p-5 text-left transition active:scale-[0.98] ${
+                          data.life_stage === ls.id ? "border-primary bg-primary/10 shadow-lg shadow-primary/10" : "border-[var(--md-outline)] bg-[var(--md-surface)] hover:border-primary/40"
+                        }`}
+                      >
+                        <p className="text-base font-extrabold">{ls.label}</p>
+                        <p className="mt-1 text-sm leading-6 text-[var(--md-on-surface-variant)]">{ls.subtitle}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setStep(1)} className="h-12 flex-1 rounded-2xl border border-[var(--md-outline)] text-sm font-bold">Back</button>
+                    <button onClick={() => setStep(3)} disabled={!data.life_stage} className="h-12 flex-1 rounded-2xl bg-primary text-sm font-extrabold text-white disabled:opacity-40">Continue</button>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === "priorities" && (
+                <div className="mx-auto w-full max-w-xl space-y-6">
+                  <div className="text-center">
+                    <h2 className="text-3xl font-extrabold tracking-tight">What matters most right now?</h2>
+                    <p className="mt-2 text-[var(--md-on-surface-variant)]">Pick up to three. LifeOS will focus your dashboard here.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {DOMAINS.slice(0, 10).map(d => {
+                      const selected = data.priorities.includes(d.id);
+                      return (
+                        <button
+                          key={d.id}
+                          onClick={() => togglePriority(d.id)}
+                          className={`relative rounded-[1.25rem] border-2 bg-[var(--md-surface-container-high)] p-4 text-left shadow-sm transition active:scale-[0.98] ${
+                            selected ? "border-primary shadow-lg shadow-primary/10" : "border-transparent hover:border-[var(--md-outline)]"
+                          }`}
+                        >
+                          {selected && (
+                            <span className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-primary text-white">
+                              <CheckCircle className="h-4 w-4" />
+                            </span>
+                          )}
+                          <span className="mb-4 grid h-12 w-12 place-items-center rounded-2xl" style={{ backgroundColor: `${d.color}1A`, color: d.color }}>
+                            <span className="material-symbols-outlined">{d.icon || "radio_button_unchecked"}</span>
+                          </span>
+                          <p className="text-lg font-extrabold">{d.label}</p>
+                          <p className="mt-1 text-xs font-semibold leading-5 text-[var(--md-on-surface-variant)]">
+                            {selected ? `Priority ${data.priorities.indexOf(d.id) + 1}` : "Tap to focus"}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setStep(2)} className="h-12 flex-1 rounded-2xl border border-[var(--md-outline)] text-sm font-bold">Back</button>
+                    <button onClick={() => setStep(4)} disabled={data.priorities.length === 0} className="h-12 flex-1 rounded-2xl bg-primary text-sm font-extrabold text-white disabled:opacity-40">Continue</button>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === "consent" && (
+                <div className="mx-auto w-full max-w-xl space-y-6">
+                  <div className="flex gap-3">
+                    <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-primary/10 text-primary">
+                      <Shield className="h-6 w-6" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm text-gray-900">{c.label} <span className="text-xs text-red-500 font-normal">Required</span></p>
-                      <p className="text-xs text-gray-500 mt-0.5">{c.desc}</p>
+                      <h2 className="text-2xl font-extrabold tracking-tight">Connect the system responsibly</h2>
+                      <p className="mt-1 text-sm leading-6 text-[var(--md-on-surface-variant)]">You control what LifeOS can process. These are required for the current core experience.</p>
                     </div>
+                  </div>
+                  <div className="space-y-3">
+                    {REQUIRED_CONSENTS.map(c => (
+                      <button
+                        key={c.type}
+                        onClick={() => setConsents(prev => ({ ...prev, [c.type]: !prev[c.type] }))}
+                        className={`flex w-full items-start gap-3 rounded-[1.25rem] border-2 p-4 text-left transition ${
+                          consents[c.type] ? "border-primary bg-primary/10" : "border-[var(--md-outline)] bg-[var(--md-surface)]"
+                        }`}
+                      >
+                        <span className={`mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-lg border-2 ${consents[c.type] ? "border-primary bg-primary text-white" : "border-[var(--md-outline)]"}`}>
+                          {consents[c.type] && <CheckCircle className="h-4 w-4" />}
+                        </span>
+                        <span>
+                          <span className="block text-sm font-extrabold">{c.label}</span>
+                          <span className="mt-1 block text-xs leading-5 text-[var(--md-on-surface-variant)]">{c.desc}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setStep(3)} className="h-12 flex-1 rounded-2xl border border-[var(--md-outline)] text-sm font-bold">Back</button>
+                    <button onClick={() => setStep(5)} disabled={!allRequiredConsented} className="h-12 flex-1 rounded-2xl bg-primary text-sm font-extrabold text-white disabled:opacity-40">
+                      {allRequiredConsented ? "Continue" : "Consent required"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === "done" && (
+                <div className="mx-auto max-w-md text-center">
+                  <div className="mx-auto mb-8 grid h-20 w-20 place-items-center rounded-[1.75rem] bg-emerald-100 text-emerald-600">
+                    <span className="material-symbols-outlined text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                  </div>
+                  <h2 className="text-3xl font-extrabold tracking-tight">LifeOS is ready, {data.name}</h2>
+                  <p className="mt-3 text-base leading-7 text-[var(--md-on-surface-variant)]">
+                    Start with one inbox, one next action, and a second brain that grows quietly in the background.
+                  </p>
+                  <button onClick={finish} disabled={saving} className="mt-8 h-14 w-full rounded-2xl bg-primary text-sm font-extrabold text-white shadow-lg shadow-primary/25 disabled:opacity-40">
+                    {saving ? "Setting up..." : "Enter LifeOS"}
                   </button>
-                ))}
-              </div>
-
-              <p className="text-xs text-gray-400">
-                By continuing you agree to our Terms of Service and Privacy Policy. You can withdraw optional consents at any time in Settings → Privacy. Required consents are necessary for core functionality.
-              </p>
-
-              <div className="flex gap-3">
-                <button onClick={() => setStep(s => s - 1)} className="flex-1 border border-gray-200 rounded-xl py-3 text-sm">Back</button>
-                <button onClick={() => setStep(s => s + 1)} disabled={!allRequiredConsented}
-                  className="flex-1 bg-primary text-white rounded-xl py-3 font-medium disabled:opacity-50">
-                  {allRequiredConsented ? "Continue" : `${REQUIRED_CONSENTS.filter(c => !consents[c.type]).length} consent(s) required`}
-                </button>
-              </div>
+                </div>
+              )}
             </div>
-          )}
-
-          {currentStep === "done" && (
-            <div className="space-y-6 text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto">
-                <span className="text-3xl">🎯</span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">You're all set, {data.name}!</h2>
-                <p className="text-gray-500 mt-2">Your AI coach is ready. We'll start with a quick overview of your life across all 10 domains.</p>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
-                {data.priorities.slice(0, 3).map(p => {
-                  const domain = DOMAINS.find(d => d.id === p);
-                  return domain ? (
-                    <div key={p} className="bg-gray-50 rounded-lg p-2 text-center">
-                      <span className="block w-4 h-4 rounded-full mx-auto mb-1" style={{ background: domain.color }} />
-                      {domain.label}
-                    </div>
-                  ) : null;
-                })}
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => setStep(s => s - 1)} className="flex-1 border border-gray-200 rounded-xl py-3 text-sm">Back</button>
-                <button onClick={finish} disabled={saving}
-                  className="flex-1 bg-primary text-white rounded-xl py-3 font-medium disabled:opacity-50">
-                  {saving ? "Setting up…" : "Enter Life OS"}
-                </button>
-              </div>
-            </div>
-          )}
+          </section>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -43,7 +43,7 @@ const TABS = ["TODAY", "THIS WEEK", "THIS MONTH", "THIS YEAR"] as const;
 type Tab = typeof TABS[number];
 
 interface HomescreenData {
-  today?: { non_movable?: unknown[] | null; tasks?: unknown[] | null; habits?: unknown[] | null; coaching_question?: string | null } | null;
+  today?: { non_movable?: unknown[] | null; tasks?: unknown[] | null; habits?: unknown[] | null; life_inbox?: unknown[] | null; coaching_question?: string | null } | null;
   this_week?: { tasks?: unknown[] | null; goals?: unknown[] | null } | null;
   this_month?: { tasks?: unknown[] | null; goals?: unknown[] | null } | null;
   this_year?: { tasks?: unknown[] | null; goals?: unknown[] | null; life_score_note?: string | null } | null;
@@ -66,6 +66,7 @@ interface HomescreenData {
     task_count?: number | null;
     planner_count?: number | null;
     agenda_count?: number | null;
+    life_inbox_count?: number | null;
     linked_task_count?: number | null;
   } | null;
   generated_at?: string;
@@ -86,6 +87,7 @@ type TaskItem = { id: string; title: string; domain?: string; priority?: string 
 type HabitItem = { id: string; name: string; domain?: string };
 type FixedItem = { id: string; title: string };
 type AgendaItem = { id?: string; title?: string; domain?: string; start_at?: string; due_date?: string; source_type?: string; item_type?: string };
+type LifeInboxItem = { id?: string; title?: string; source_type?: string; source_provider?: string; item_kind?: string; priority?: string; created_at?: string };
 type NextAction =
   | { kind: "link"; label: string; reason: string; cta: string; href: string }
   | { kind: "task"; label: string; reason: string; cta: string; taskId: string }
@@ -108,6 +110,10 @@ function validFixedItem(item: FixedItem): item is FixedItem {
 }
 
 function validAgendaItem(item: AgendaItem): item is AgendaItem {
+  return Boolean(item?.title);
+}
+
+function validLifeInboxItem(item: LifeInboxItem): item is LifeInboxItem {
   return Boolean(item?.title);
 }
 
@@ -237,6 +243,7 @@ export default function DashboardPage() {
   const lifeScore = typeof scoreData?.score === "number" ? scoreData.score : 0;
   const todayTasks = asArray<TaskItem>(homescreen?.today?.tasks).filter(validTask);
   const todayHabits = asArray<HabitItem>(homescreen?.today?.habits).filter(validHabit);
+  const lifeInbox = asArray<LifeInboxItem>(homescreen?.today?.life_inbox).filter(validLifeInboxItem);
   const fixedItems = asArray<FixedItem>(homescreen?.today?.non_movable).filter(validFixedItem);
   const weekTasks = asArray<TaskItem>(homescreen?.this_week?.tasks).filter(validTask);
   const agendaItems = asArray<AgendaItem>(homescreen?.agenda).filter(validAgendaItem);
@@ -246,6 +253,7 @@ export default function DashboardPage() {
   const activeKanbanTotal = typeof kanbanSummary.active_total === "number" ? kanbanSummary.active_total : 0;
   const blockedKanbanTotal = typeof kanbanSummary.blocked_total === "number" ? kanbanSummary.blocked_total : 0;
   const plannerCount = typeof integrationSummary.planner_count === "number" ? integrationSummary.planner_count : agendaItems.length;
+  const lifeInboxCount = typeof integrationSummary.life_inbox_count === "number" ? integrationSummary.life_inbox_count : lifeInbox.length;
   const linkedTaskCount = typeof integrationSummary.linked_task_count === "number" ? integrationSummary.linked_task_count : agendaItems.filter(item => item.source_type === "task" || item.item_type === "task").length;
   const totalTasks = openKanbanTotal;
   const domainEntries = Object.entries(domainScores ?? {}).filter((entry): entry is [string, number] => typeof entry[1] === "number");
@@ -253,7 +261,7 @@ export default function DashboardPage() {
   const quietDomain = Object.entries(domainScores ?? {}).sort((a, b) => a[1] - b[1])[0];
   const topDomainMeta = DOMAINS.find(d => d.id === topDomain?.[0]);
   const quietDomainMeta = DOMAINS.find(d => d.id === quietDomain?.[0]);
-  const momentumTotal = fixedItems.length + todayTasks.length + todayHabits.length;
+  const momentumTotal = fixedItems.length + todayTasks.length + todayHabits.length + lifeInbox.length;
   const momentumScore = Math.min(100, Math.max(12, 100 - momentumTotal * 9));
 
   const backendAction = homescreen?.next_best_action;
@@ -401,13 +409,13 @@ export default function DashboardPage() {
               <span suppressHydrationWarning>{dateLabel || "Today"}</span>
             </div>
             <h1 suppressHydrationWarning className="mt-4 max-w-3xl text-3xl font-black tracking-tight md:text-6xl">
-              {greeting}, {firstName}. Build one return loop today.
+              {greeting}, {firstName}. Run life from one place.
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
-              Trigger, action, reward, investment. Life OS now guides the next useful behaviour instead of presenting a static dashboard.
+              Capture everything. Decide once. Let LifeOS route it to tasks, calendar, second brain or archive.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              {["Trigger", "Action", "Reward", "Investment"].map((step, index) => (
+              {["Capture", "Decide", "Do", "Remember"].map((step, index) => (
                 <span key={step} className="rounded-full border border-white/15 bg-white/[0.13] px-3 py-1 text-xs font-bold text-slate-100 shadow-sm backdrop-blur-xl">
                   {index + 1}. {step}
                 </span>
@@ -424,8 +432,8 @@ export default function DashboardPage() {
               <div className="mt-1 text-3xl font-black">{totalTasks}</div>
             </div>
             <div className="soft-float rounded-3xl border border-white/15 bg-white/[0.14] p-4 shadow-2xl shadow-blue-950/10 backdrop-blur-2xl [animation-delay:1800ms]">
-              <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Planner</div>
-              <div className="mt-1 text-3xl font-black">{plannerCount}</div>
+              <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Inbox</div>
+              <div className="mt-1 text-3xl font-black">{lifeInboxCount}</div>
             </div>
           </div>
         </div>
@@ -510,6 +518,61 @@ export default function DashboardPage() {
           >
             {insightRevealed ? "Unlocked for today" : "Reveal today's insight"}
           </button>
+        </div>
+      </section>
+
+      <section className="mb-6 grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="panel float-in rounded-[2rem] p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="metric-label">Life Inbox</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">What needs attention?</h2>
+            </div>
+            <span className="rounded-full bg-primary px-3 py-1 text-[11px] font-black text-white">
+              {lifeInboxCount} open
+            </span>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Email, calendar and manual captures land here first. Decide once: do, schedule, remember, snooze or archive.
+          </p>
+          <div className="mt-4 space-y-2">
+            {lifeInbox.slice(0, 4).map((item, index) => (
+              <div key={`${item.id || item.title}-${index}`} className="flex items-center gap-3 rounded-2xl border border-[var(--md-outline)] bg-[var(--md-surface)] px-3 py-3">
+                <span className="grid h-10 w-10 flex-none place-items-center rounded-2xl bg-primary/10 text-primary">
+                  <span className="material-symbols-outlined">
+                    {item.source_type === "email" ? "mail" : item.source_type === "calendar" ? "calendar_month" : "inbox"}
+                  </span>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-black text-slate-900">{item.title}</p>
+                  <p className="mt-0.5 text-xs font-bold capitalize text-slate-400">
+                    {item.source_provider || item.source_type || "lifeos"} · {item.item_kind || "capture"}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {!lifeInbox.length && (
+              <button
+                onClick={openQuickCapture}
+                className="w-full rounded-3xl border border-dashed border-[var(--md-outline)] bg-[var(--md-surface)] p-5 text-left text-sm font-bold text-slate-500 transition hover:border-primary hover:text-primary"
+              >
+                Your inbox is clear. Capture one useful signal.
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="panel-dark relative overflow-hidden rounded-[2rem] p-5 text-white">
+          <div className="absolute -right-16 -top-20 h-48 w-48 rounded-full bg-white/15 blur-3xl" />
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-white/60">Simple operating model</p>
+          <h2 className="serif-italic mt-3 text-4xl leading-tight md:text-5xl">One question. One next move.</h2>
+          <div className="mt-5 grid gap-2 sm:grid-cols-5">
+            {["Do", "Schedule", "Remember", "Snooze", "Archive"].map(label => (
+              <div key={label} className="rounded-2xl bg-white/15 px-3 py-3">
+                <p className="text-sm font-extrabold">{label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -9,22 +9,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: { DEFAULT: "#6366F1", light: "#EEF2FF", dark: "#4F46E5" },
+        primary: { DEFAULT: "#6C3AFF", light: "#E7DEFF", dark: "#5304E7" },
         domain: {
           health:    "#10B981",
-          family:    "#F59E0B",
+          family:    "#FF7F50",
           education: "#3B82F6",
-          social:    "#EC4899",
-          finance:   "#059669",
-          career:    "#8B5CF6",
-          growth:    "#F97316",
+          social:    "#8B5CF6",
+          finance:   "#F59E0B",
+          career:    "#EC4899",
+          growth:    "#06B6D4",
           property:  "#6B7280",
           holiday:   "#14B8A6",
           community: "#EF4444",
         },
       },
       fontFamily: {
-        sans: ["-apple-system", "BlinkMacSystemFont", "SF Pro Display", "Google Sans", "Segoe UI", "Roboto", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "-apple-system", "BlinkMacSystemFont", "SF Pro Display", "Google Sans", "Segoe UI", "Roboto", "sans-serif"],
+        serifDisplay: ["Instrument Serif", "serif"],
       },
       borderRadius: {
         card: "16px",
