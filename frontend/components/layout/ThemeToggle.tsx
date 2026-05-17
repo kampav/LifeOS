@@ -34,7 +34,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       onClick={toggleTheme}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Light mode" : "Dark mode"}
-      className={`material-toggle group relative inline-flex items-center rounded-full border border-white/55 bg-white/45 p-1 shadow-sm backdrop-blur-xl transition hover:-translate-y-0.5 ${
+      className={`material-toggle group relative inline-flex items-center rounded-full border border-white/70 bg-white/70 p-1 shadow-lg shadow-blue-950/10 backdrop-blur-xl transition hover:-translate-y-0.5 dark:bg-white/15 ${
         compact ? "h-10 w-16" : "h-11 w-full justify-between px-2"
       }`}
     >
@@ -44,7 +44,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
         </span>
       )}
       <span
-        className={`grid h-8 w-8 place-items-center rounded-full bg-[var(--md-primary)] text-white shadow-lg shadow-blue-950/20 transition-transform ${
+        className={`grid h-8 w-8 place-items-center rounded-full bg-[linear-gradient(135deg,#1787FF,#64B5FF)] text-white shadow-lg shadow-blue-500/30 transition-transform dark:bg-[linear-gradient(135deg,#FFC558,#FF6A4A)] dark:text-slate-950 ${
           isDark ? "translate-x-0" : compact ? "translate-x-6" : "translate-x-0"
         }`}
       >
