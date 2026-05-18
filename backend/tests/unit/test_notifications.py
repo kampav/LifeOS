@@ -61,6 +61,25 @@ def test_delete_notification(client, mock_supabase):
     assert r.status_code == 204
 
 
+def test_generate_nudges(client, mock_supabase):
+    table = mock_supabase.table.return_value
+    table.execute.side_effect = [
+        MagicMock(data={"user_id": "test-user-123", "domain_weights": {"health": 8}, "nudge_preferences": {"enabled": True, "max_per_day": 1}}),
+        MagicMock(data=[]),  # tasks
+        MagicMock(data=[{"id": "life-1", "title": "School form", "status": "inbox"}]),  # life_items
+        MagicMock(data=[]),  # planner
+        MagicMock(data=[]),  # entries
+        MagicMock(data=[]),  # existing notifications
+        MagicMock(data=[{"id": "nudge-1", "type": "nudge", "title": "Clear one Life Inbox item"}]),
+    ]
+
+    r = client.post("/api/v1/notifications/nudges/generate")
+
+    assert r.status_code == 200
+    assert r.json()["created"] == 1
+    assert r.json()["nudges"][0]["type"] == "nudge"
+
+
 def test_unauthenticated_rejected():
     with patch("app.db.client.create_client"), \
          patch("app.security.rate_limiter.get_redis"):

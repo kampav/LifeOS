@@ -1,5 +1,15 @@
 export const RELEASE_LOG = [
   {
+    version: "0.8.0",
+    date: "2026-05-18",
+    title: "Custom areas and useful nudges",
+    items: [
+      "Added active/hidden controls for each LifeOS area.",
+      "Added per-area labels, outcomes and personal nudge wording.",
+      "Added a nudge generator that turns open tasks, inbox items and upcoming plans into useful reminders.",
+    ],
+  },
+  {
     version: "0.7.0",
     date: "2026-05-17",
     title: "Material You LifeOS direction",

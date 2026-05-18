@@ -10,6 +10,20 @@ export interface PersonalisationPrefs {
   accent_colour: string;
   layout_density: string;
   font_size: string;
+  domain_config?: Record<string, {
+    enabled?: boolean;
+    label?: string;
+    outcome?: string;
+    widgets?: string[];
+    quick_captures?: string[];
+    nudge?: string;
+  }>;
+  nudge_preferences?: {
+    enabled?: boolean;
+    max_per_day?: number;
+    quiet_hours?: { start?: string; end?: string };
+    channels?: string[];
+  };
 }
 
 export const DEFAULT_PREFS: PersonalisationPrefs = {
@@ -23,6 +37,8 @@ export const DEFAULT_PREFS: PersonalisationPrefs = {
   accent_colour: "#6366F1",
   layout_density: "comfortable",
   font_size: "medium",
+  domain_config: {},
+  nudge_preferences: { enabled: true, max_per_day: 3, quiet_hours: { start: "21:30", end: "07:00" }, channels: ["in_app"] },
 };
 
 // ── CSS variable injection ──────────────────────────────────────────────────

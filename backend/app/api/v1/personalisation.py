@@ -24,6 +24,13 @@ DEFAULTS = {
     "accent_colour": "#6366F1",
     "layout_density": "comfortable",
     "font_size": "medium",
+    "domain_config": {},
+    "nudge_preferences": {
+        "enabled": True,
+        "quiet_hours": {"start": "21:30", "end": "07:00"},
+        "max_per_day": 3,
+        "channels": ["in_app"],
+    },
 }
 
 DOMAINS = tuple(DEFAULTS["domain_weights"].keys())
@@ -37,6 +44,17 @@ class PersonalisationUpdate(BaseModel):
     accent_colour: Optional[str] = None
     layout_density: Optional[str] = None
     font_size: Optional[str] = None
+    domain_config: Optional[dict[str, Any]] = None
+    nudge_preferences: Optional[dict[str, Any]] = None
+
+
+class DomainCustomisationUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    label: Optional[str] = None
+    outcome: Optional[str] = None
+    widgets: Optional[list[str]] = None
+    quick_captures: Optional[list[str]] = None
+    nudge: Optional[str] = None
 
 
 def _get_or_create_prefs(user_id: str, sb) -> dict:
@@ -256,3 +274,24 @@ async def undo_personalisation(user: User = Depends(get_current_user)):
     prev["undo_stack"] = undo_stack
     result = sb.table("user_personalisation").update(prev).eq("user_id", user.id).execute()
     return result.data[0] if result.data else prev
+
+
+@router.get("/domains")
+async def get_domain_customisation(user: User = Depends(get_current_user)):
+    sb = get_supabase()
+    prefs = _get_or_create_prefs(user.id, sb)
+    return prefs.get("domain_config") or {}
+
+
+@router.patch("/domains/{domain}")
+async def update_domain_customisation(domain: str, payload: DomainCustomisationUpdate, user: User = Depends(get_current_user)):
+    if domain not in DOMAINS:
+        raise HTTPException(400, "Unknown domain")
+    sb = get_supabase()
+    prefs = _get_or_create_prefs(user.id, sb)
+    config = prefs.get("domain_config") or {}
+    current = config.get(domain) or {}
+    updates = payload.model_dump(exclude_none=True)
+    config[domain] = {**current, **updates}
+    result = sb.table("user_personalisation").update({"domain_config": config}).eq("user_id", user.id).execute()
+    return (result.data[0] if result.data else {"domain_config": config}).get("domain_config", config)

@@ -27,6 +27,11 @@ export default function ProfilePage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notification-preferences"] }),
   });
 
+  const generateNudges = useMutation({
+    mutationFn: () => notificationsApi.generateNudges().then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+
   const displayName = profile?.full_name || profile?.name || "Your profile";
 
   return (
@@ -92,6 +97,7 @@ export default function ProfilePage() {
               ["evening_reflection", "Evening reflection"],
               ["weekly_review", "Weekly review"],
               ["email_daily_brief", "Email daily brief"],
+              ["nudges", "Smart nudges"],
             ].map(([key, label]) => (
               <button
                 key={key}
@@ -105,6 +111,19 @@ export default function ProfilePage() {
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={() => generateNudges.mutate()}
+            disabled={generateNudges.isPending}
+            className="mt-4 w-full rounded-2xl bg-primary px-4 py-3 text-sm font-black text-white shadow-lg shadow-primary/20 disabled:opacity-50"
+          >
+            {generateNudges.isPending ? "Finding useful nudges..." : "Generate useful nudges now"}
+          </button>
+          {generateNudges.data && (
+            <p className="mt-2 text-xs font-bold text-primary">
+              {generateNudges.data.created} nudge{generateNudges.data.created === 1 ? "" : "s"} added.
+            </p>
+          )}
           <div className="mt-4 flex gap-2 rounded-2xl bg-primary/10 p-3 text-sm leading-6 text-slate-700">
             <Shield className="mt-0.5 h-4 w-4 flex-none text-primary" />
             Profile, consent and data controls remain separate in Privacy settings.

@@ -202,3 +202,16 @@ def test_learning_insights_low_signal_keeps_weights():
     assert result["sample_size"] == 1
     assert result["suggested_domain_weights"] == DEFAULTS["domain_weights"]
     assert result["insights"][0]["type"] == "data_quality"
+
+
+def test_update_domain_customisation(client, mock_supabase):
+    table = mock_supabase.table.return_value
+    table.execute.side_effect = [
+        MagicMock(data={**PREFS_ROW, "domain_config": {}}),
+        MagicMock(data=[{**PREFS_ROW, "domain_config": {"health": {"label": "Wellbeing", "enabled": True}}}]),
+    ]
+
+    r = client.patch("/api/v1/users/me/personalisation/domains/health", json={"label": "Wellbeing", "enabled": True})
+
+    assert r.status_code == 200
+    assert r.json()["health"]["label"] == "Wellbeing"

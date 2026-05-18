@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from app.security.auth import get_current_user, User
 from app.db.client import get_supabase
+from app.services.nudge_service import generate_nudges_for_user
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -13,6 +14,7 @@ class NotificationPreferences(BaseModel):
     goal_reminders: bool = True
     relationship_check_ins: bool = True
     evening_reflection: bool = True
+    nudges: bool = True
     email_daily_brief: bool = False
     email_weekly_review: bool = True
 
@@ -57,3 +59,11 @@ async def get_notification_preferences(user: User = Depends(get_current_user)):
     result = sb.table("profiles").select("notification_preferences").eq("id", user.id).single().execute()
     prefs = (result.data or {}).get("notification_preferences") or {}
     return NotificationPreferences(**prefs).model_dump()
+
+
+@router.post("/nudges/generate")
+async def generate_nudges(user: User = Depends(get_current_user)):
+    sb = get_supabase()
+    prefs_result = sb.table("user_personalisation").select("*").eq("user_id", user.id).single().execute()
+    created = generate_nudges_for_user(user.id, sb, prefs_result.data or {})
+    return {"created": len(created), "nudges": created}

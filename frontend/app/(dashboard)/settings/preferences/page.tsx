@@ -4,8 +4,9 @@ import { Activity, CheckCircle2, Lightbulb, SlidersHorizontal } from "lucide-rea
 import { api } from "@/lib/api";
 import { applyPersonalisation, DEFAULT_PREFS } from "@/lib/personalisation";
 import type { PersonalisationPrefs } from "@/lib/personalisation";
+import { DOMAINS as DOMAIN_META } from "@/lib/utils";
 
-const DOMAINS = ["health", "finance", "family", "social", "career", "growth", "property", "holiday", "community", "education"];
+const DOMAINS = DOMAIN_META.map(domain => domain.id);
 
 const TONE_OPTIONS = [
   { value: 1, label: "Formal", desc: "Professional and structured" },
@@ -76,6 +77,12 @@ export default function PreferencesPage() {
       qc.setQueryData(["personalisation"], data);
       applyPersonalisation(data);
     },
+  });
+
+  const domainMutation = useMutation({
+    mutationFn: ({ domain, updates }: { domain: string; updates: Record<string, unknown> }) =>
+      api.patch(`/users/me/personalisation/domains/${domain}`, updates).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["personalisation"] }),
   });
 
   const current = prefs || DEFAULT_PREFS;
@@ -233,6 +240,118 @@ export default function PreferencesPage() {
               </span>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Area customisation */}
+      <section>
+        <h2 className="text-sm font-semibold mb-1">Customize Life Areas</h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Choose the areas LifeOS should actively manage and give each one a plain-English job.
+        </p>
+        <div className="grid gap-3">
+          {DOMAIN_META.map(domain => {
+            const config = current.domain_config?.[domain.id] || {};
+            const isEnabled = config.enabled !== false;
+            return (
+              <div key={domain.id} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <span
+                      className="mt-2 h-3 w-3 flex-none rounded-full"
+                      style={{ backgroundColor: domain.color }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <input
+                        defaultValue={config.label || domain.label}
+                        onBlur={e => {
+                          const label = e.currentTarget.value.trim();
+                          if (label && label !== (config.label || domain.label)) {
+                            domainMutation.mutate({ domain: domain.id, updates: { label } });
+                          }
+                        }}
+                        className="w-full rounded-xl border border-transparent bg-transparent px-0 py-1 text-sm font-bold text-gray-950 outline-none focus:border-indigo-200 focus:bg-indigo-50 focus:px-3 dark:text-white dark:focus:bg-indigo-950"
+                      />
+                      <input
+                        defaultValue={config.outcome || ""}
+                        placeholder={`What should ${domain.label} help you do?`}
+                        onBlur={e => {
+                          const outcome = e.currentTarget.value.trim();
+                          if (outcome !== (config.outcome || "")) {
+                            domainMutation.mutate({ domain: domain.id, updates: { outcome } });
+                          }
+                        }}
+                        className="mt-1 w-full rounded-xl border border-transparent bg-transparent px-0 py-1 text-xs text-gray-500 outline-none placeholder:text-gray-400 focus:border-indigo-200 focus:bg-indigo-50 focus:px-3 dark:text-gray-300 dark:focus:bg-indigo-950"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => domainMutation.mutate({ domain: domain.id, updates: { enabled: !isEnabled } })}
+                    className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                      isEnabled
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-300"
+                    }`}
+                  >
+                    {isEnabled ? "Active" : "Hidden"}
+                  </button>
+                </div>
+                <textarea
+                  defaultValue={config.nudge || ""}
+                  placeholder={`Optional nudge style for ${domain.label}, for example: keep this practical and low-noise.`}
+                  onBlur={e => {
+                    const nudge = e.currentTarget.value.trim();
+                    if (nudge !== (config.nudge || "")) {
+                      domainMutation.mutate({ domain: domain.id, updates: { nudge } });
+                    }
+                  }}
+                  className="mt-3 min-h-16 w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none ring-indigo-200 transition focus:ring-4 dark:border-gray-700 dark:bg-gray-950"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Nudges */}
+      <section>
+        <h2 className="text-sm font-semibold mb-3">Nudges</h2>
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-bold">Smart nudges</div>
+              <div className="mt-1 text-xs text-gray-500">Only surface actions when they help you move life forward.</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => patch({
+                nudge_preferences: {
+                  ...(current.nudge_preferences || {}),
+                  enabled: current.nudge_preferences?.enabled === false,
+                },
+              })}
+              className={`h-7 w-12 rounded-full p-1 transition ${current.nudge_preferences?.enabled === false ? "bg-gray-300" : "bg-indigo-500"}`}
+            >
+              <span className={`block h-5 w-5 rounded-full bg-white transition ${current.nudge_preferences?.enabled === false ? "" : "translate-x-5"}`} />
+            </button>
+          </div>
+          <label className="mt-4 block text-xs font-bold text-gray-500">
+            Maximum nudges per day
+            <input
+              type="number"
+              min={1}
+              max={8}
+              defaultValue={current.nudge_preferences?.max_per_day ?? 3}
+              onBlur={e => patch({
+                nudge_preferences: {
+                  ...(current.nudge_preferences || {}),
+                  max_per_day: Math.max(1, Math.min(8, Number(e.currentTarget.value) || 3)),
+                },
+              })}
+              className="mt-2 h-11 w-28 rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-950 outline-none ring-indigo-200 focus:ring-4 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+            />
+          </label>
         </div>
       </section>
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0] 2026-05-18 — Custom Areas and Nudge Engine
+
+### Added (Backend)
+- **Area customisation:** personalisation now stores per-domain labels, visibility, outcomes, widgets, captures and nudge wording.
+- **Nudge engine:** `POST /notifications/nudges/generate` creates in-app nudges from overdue tasks, Life Inbox items, upcoming planner events and quiet high-priority areas.
+- **Notification metadata:** notifications can now carry action URLs and domain/reason metadata for richer routing.
+
+### Added (Frontend)
+- **Preferences:** `/settings/preferences` now lets users activate/hide each life area, rename it, describe its outcome and tune nudge wording.
+- **Profile:** `/profile` includes a Smart nudges toggle and manual nudge generation.
+- **Release log:** in-app release log updated for this slice.
+
+---
+
 All notable changes to Life OS are documented here.
 Format: `[version] YYYY-MM-DD — Persona — Description`
 

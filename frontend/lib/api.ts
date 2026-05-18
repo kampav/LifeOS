@@ -86,6 +86,7 @@ export const notificationsApi = {
   delete: (id: string) => api.delete(`/notifications/${id}`),
   getPreferences: () => api.get("/notifications/preferences"),
   updatePreferences: (data: Record<string, unknown>) => api.post("/notifications/preferences", data),
+  generateNudges: () => api.post("/notifications/nudges/generate"),
 };
 
 export const personalisationApi = {
@@ -94,6 +95,8 @@ export const personalisationApi = {
   reset: () => api.post("/users/me/personalisation/reset"),
   learning: () => api.get("/users/me/personalisation/learning"),
   undo: () => api.post("/users/me/personalisation/undo"),
+  domainConfig: () => api.get("/users/me/personalisation/domains"),
+  updateDomainConfig: (domain: string, data: Record<string, unknown>) => api.patch(`/users/me/personalisation/domains/${domain}`, data),
 };
 
 export const mcpApi = {
