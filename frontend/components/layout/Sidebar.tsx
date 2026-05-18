@@ -80,7 +80,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-6 rounded-[1.35rem] bg-white/62 p-3 shadow-[0_10px_26px_rgba(91,0,240,0.06)]">
+      <div className="mt-6 rounded-[1.35rem] border border-white/60 bg-white/70 p-3 shadow-[0_10px_26px_rgba(91,0,240,0.06)] dark:border-white/10 dark:bg-white/5">
         <p className="px-2 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">Areas</p>
         <div className="mt-2 grid grid-cols-2 gap-1">
           {DOMAINS.slice(0, 8).map(domain => (

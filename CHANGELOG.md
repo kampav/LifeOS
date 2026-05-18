@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.1] 2026-05-18 — UX Architecture Guardrails
+
+### Added (Docs)
+- **UX architecture:** added `docs/lifeos-ux-architecture.md` to keep future builds aligned around one shell, one inbox, one decision model and one next action.
+
+### Changed (Frontend)
+- **Dark shell:** improved dark-mode styling for the Stitch-inspired command rail and coach card.
+
+---
+
 ## [1.5.0] 2026-05-18 — Stitch-Inspired Command Shell
 
 ### Changed (Frontend)

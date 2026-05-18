@@ -1,5 +1,15 @@
 export const RELEASE_LOG = [
   {
+    version: "0.9.1",
+    date: "2026-05-18",
+    title: "UX architecture guardrails",
+    items: [
+      "Added a LifeOS UX and architecture direction for future builds.",
+      "Improved the Stitch-inspired shell in dark mode.",
+      "Clarified the product model around capture, decide, act and remember.",
+    ],
+  },
+  {
     version: "0.9.0",
     date: "2026-05-18",
     title: "Stitch-inspired command shell",

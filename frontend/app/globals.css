@@ -66,6 +66,9 @@ html.dark {
   --md-on-surface-variant: #CBD5E1;
   --md-outline: #3D465C;
   --md-shadow: rgba(0, 0, 0, 0.42);
+  --life-rail: #111827;
+  --life-rail-active: #2C1B57;
+  --life-mint: #34D399;
 }
 
 body {
@@ -204,6 +207,23 @@ body {
   border: 1px solid rgba(16, 197, 143, 0.34);
   background: rgba(255, 255, 255, 0.76);
   box-shadow: 0 18px 44px rgba(91, 0, 240, 0.08);
+}
+
+html.dark .life-shell-rail {
+  background: linear-gradient(180deg, #101827 0%, #0B1020 100%);
+  border-right-color: rgba(61, 70, 92, 0.86);
+}
+
+html.dark .life-nav-active {
+  background: var(--life-rail-active);
+  color: #E7DEFF;
+  box-shadow: inset 5px 0 0 #CBBEFF;
+}
+
+html.dark .life-coach-card {
+  border-color: rgba(52, 211, 153, 0.34);
+  background: rgba(22, 30, 51, 0.92);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
 }
 
 .swatch-pop {
