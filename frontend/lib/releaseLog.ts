@@ -1,5 +1,15 @@
 export const RELEASE_LOG = [
   {
+    version: "0.9.0",
+    date: "2026-05-18",
+    title: "Stitch-inspired command shell",
+    items: [
+      "Updated the app shell with a calm pastel command rail inspired by the Google Stitch direction.",
+      "Reworked navigation around Home, Planning, Coach and Domains.",
+      "Added a persistent AI Coach prompt and Quick Action entry point to the desktop rail.",
+    ],
+  },
+  {
     version: "0.8.0",
     date: "2026-05-18",
     title: "Custom areas and useful nudges",

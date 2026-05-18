@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex min-h-screen app-surface">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-16 flex items-center justify-end gap-3 px-6 flex-shrink-0 md:flex hidden">
+        <div className="hidden h-16 flex-shrink-0 items-center justify-end gap-3 border-b border-white/55 px-6 md:flex">
           <ThemeToggle compact />
           <NotificationBell />
         </div>

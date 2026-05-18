@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.0] 2026-05-18 — Stitch-Inspired Command Shell
+
+### Changed (Frontend)
+- **App shell:** desktop navigation now follows the Stitch direction with a pastel command rail, bold violet active state and calm white content cards.
+- **Navigation model:** primary rail simplified around Home, Planning, Coach and Domains so the product feels like one operating system rather than a list of features.
+- **Behaviour entry points:** desktop rail now keeps AI Coach context and Quick Action visible to make capture and next action easier to reach.
+- **Mobile nav:** bottom navigation now mirrors the same Home, Plan, Coach, Profile and Domains model.
+
+---
+
 ## [1.4.0] 2026-05-18 — Custom Areas and Nudge Engine
 
 ### Added (Backend)
